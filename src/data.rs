@@ -24,8 +24,13 @@ pub struct Domain {
     force_redirection: bool,
 }
 
-#[allow(dead_code)]
-pub fn load_data(path: &str) -> Result<Providers> {
+impl Providers {
+    pub fn new(path: &str) -> Result<Providers> {
+        load_data(path)
+    }
+}
+
+fn load_data(path: &str) -> Result<Providers> {
     let path = Path::new(path);
     let mut file = File::open(&path)?;
 
