@@ -3,7 +3,7 @@ use std::fs::File;
 use std::io::prelude::*;
 use std::path::Path;
 use serde::{Serialize, Deserialize};
-
+use anyhow::Result;
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -25,19 +25,21 @@ pub struct Domain {
 }
 
 #[allow(dead_code)]
-pub fn load_data(path: &str) -> Providers {
+pub fn load_data(path: &str) -> Result<Providers> {
     let path = Path::new(path);
-    let mut file = File::open(&path).unwrap();
+    let mut file = File::open(&path)?;
 
     let mut buffer = String::new();
-    file.read_to_string(&mut buffer).unwrap();
+    file.read_to_string(&mut buffer)?;
 
-    serde_json::from_str(&buffer).unwrap()
+    let providers = serde_json::from_str(&buffer)?;
+
+    Ok(providers)
 }
 
 #[test]
 fn test_load_data() {
-    let data = load_data("./rules/data.min.json");
+    let data = load_data("./rules/data.min.json").expect("fail to read data.min.json");
     assert_ne!(0, data.providers.len());
 
     let bili = data.providers.get("m.bilibili.com");
