@@ -37,5 +37,12 @@ pub fn load_data(path: &str) -> Providers {
 
 #[test]
 fn test_load_data() {
-    assert_ne!(0, load_data("./rules/data.min.json").providers.len());
+    let data = load_data("./rules/data.min.json");
+    assert_ne!(0, data.providers.len());
+
+    let bili = data.providers.get("m.bilibili.com");
+    assert!(bili.is_some());
+
+    let bili = bili.unwrap();
+    assert_eq!(vec!["bbid", "ts"], bili.rules);
 }
