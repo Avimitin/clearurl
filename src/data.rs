@@ -8,20 +8,20 @@ use anyhow::Result;
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct Providers {
-    providers: HashMap<String, Domain>,
+    pub providers: HashMap<String, Domain>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct Domain {
-    url_pattern: String,
-    complete_provider: bool,
-    rules: Vec<String>,
-    referral_marketing: Vec<String>,
-    raw_rules: Vec<String>,
-    exceptions: Vec<String>,
-    redirections: Vec<String>,
-    force_redirection: bool,
+    pub url_pattern: String,
+    pub complete_provider: bool,
+    pub rules: Vec<String>,
+    pub referral_marketing: Vec<String>,
+    pub raw_rules: Vec<String>,
+    pub exceptions: Vec<String>,
+    pub redirections: Vec<String>,
+    pub force_redirection: bool,
 }
 
 impl Providers {
