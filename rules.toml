@@ -1,0 +1,45 @@
+["default"]
+same_as = ""
+rules = []
+redirection = false
+match_sub = false
+
+["twitter.com"]
+same_as = ""
+rules = [
+  "(?:ref_?)?src",
+  "s",
+  "cn",
+  "ref_url",
+  "t"
+]
+redirection = false
+match_sub = true
+
+["bilibili.com"]
+same_as = ""
+rules = [
+    "callback",
+    "spm_id_from",
+    "from_source",
+    "from",
+    "seid",
+    "share_source",
+    "msource",
+    "refer_from",
+    "share_medium",
+    "share_source",
+    "share_plat",
+    "share_tag",
+    "share_session_id",
+    "timestamp",
+    "unique_k"
+]
+redirection = false
+match_sub = false
+
+["b23.tv"]
+same_as = "bilibili.com"
+rules = []
+redirection = true
+match_sub = false
