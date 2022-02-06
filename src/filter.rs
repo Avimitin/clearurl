@@ -3,7 +3,7 @@ use anyhow::{bail, Context, Result};
 use url::form_urlencoded;
 use url::Url;
 
-pub fn filter<'a>(providers: &Providers, url: &'a mut Url) -> Result<&'a mut Url> {
+pub fn filter<'a>(providers: &Providers, url: &'a mut Url) -> Result<&'a Url> {
     let providers = &providers.providers;
     let domain = url.domain();
     if domain.is_none() {
@@ -52,6 +52,6 @@ pub fn filter<'a>(providers: &Providers, url: &'a mut Url) -> Result<&'a mut Url
 fn test_filter() {
     let data = crate::data::Providers::new("./rules/data.min.json").expect("fail to read data.min.json");
     let mut url = Url::parse("https://twitter.com/CiloRanko/status/1478401918792011776?s=20&t=AVPOmNLtaozrA0Ccp6DyAw").unwrap();
-    let mut url = filter(&data, &mut url).unwrap();
+    let url = filter(&data, &mut url).unwrap();
     assert_eq!(url.as_str(), "https://twitter.com/CiloRanko/status/1478401918792011776");
 }
