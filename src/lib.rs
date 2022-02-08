@@ -3,5 +3,5 @@
     allow(dead_code, unused_imports, unused_variables, unused_mut)
 )]
 
-mod data;
-mod filter;
+pub mod data;
+pub mod filter;
