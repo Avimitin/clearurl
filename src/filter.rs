@@ -1,16 +1,15 @@
-use crate::data::Providers;
+use crate::data::Domains;
 use anyhow::{bail, Context, Result};
 use url::form_urlencoded;
 use url::Url;
 
-pub fn filter<'a>(providers: &Providers, url: &'a mut Url) -> Result<&'a Url> {
-    let providers = &providers.providers;
+pub fn filter<'a>(domains: &Domains, url: &'a mut Url) -> Result<&'a Url> {
     let domain = url.domain();
     if domain.is_none() {
         bail!("this is an invalid URL")
     }
     let domain = domain.unwrap();
-    let rule = providers
+    let rule = domains
         .get(domain)
         .context(format!("no rule for domain: <{}>", domain))?;
 
@@ -50,8 +49,15 @@ pub fn filter<'a>(providers: &Providers, url: &'a mut Url) -> Result<&'a Url> {
 
 #[test]
 fn test_filter() {
-    let data = crate::data::Providers::new("./rules/data.min.json").expect("fail to read data.min.json");
-    let mut url = Url::parse("https://twitter.com/CiloRanko/status/1478401918792011776?s=20&t=AVPOmNLtaozrA0Ccp6DyAw").unwrap();
+    let data =
+        crate::data::Domains::load_from_file("./rules.toml").expect("fail to read rules.toml");
+    let mut url = Url::parse(
+        "https://twitter.com/CiloRanko/status/1478401918792011776?s=20&t=AVPOmNLtaozrA0Ccp6DyAw",
+    )
+    .unwrap();
     let url = filter(&data, &mut url).unwrap();
-    assert_eq!(url.as_str(), "https://twitter.com/CiloRanko/status/1478401918792011776");
+    assert_eq!(
+        url.as_str(),
+        "https://twitter.com/CiloRanko/status/1478401918792011776"
+    );
 }

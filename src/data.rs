@@ -1,55 +1,52 @@
+use anyhow::Result;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::prelude::*;
 use std::path::Path;
-use serde::{Serialize, Deserialize};
-use anyhow::Result;
 
 #[derive(Serialize, Deserialize, Debug)]
-#[serde(rename_all = "camelCase")]
-pub struct Providers {
-    pub providers: HashMap<String, Domain>,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-#[serde(rename_all = "camelCase")]
-pub struct Domain {
-    pub url_pattern: String,
-    pub complete_provider: bool,
+pub struct DomainConfig {
+    pub match_sub: bool,
+    pub redirection: bool,
+    pub import: String,
     pub rules: Vec<String>,
-    pub referral_marketing: Vec<String>,
-    pub raw_rules: Vec<String>,
-    pub exceptions: Vec<String>,
-    pub redirections: Vec<String>,
-    pub force_redirection: bool,
 }
 
-impl Providers {
-    pub fn new(path: &str) -> Result<Providers> {
-        load_data(path)
+pub struct Domains {
+    data: HashMap<String, DomainConfig>,
+}
+
+impl Domains {
+    pub fn load_from_file(path: &str) -> Result<Domains> {
+        let path = Path::new(path);
+        let mut file = File::open(&path)?;
+
+        let mut buffer = String::new();
+        file.read_to_string(&mut buffer)?;
+
+        let data: HashMap<String, DomainConfig> = toml::from_str(&buffer)?;
+
+        Ok(Domains { data })
     }
-}
 
-fn load_data(path: &str) -> Result<Providers> {
-    let path = Path::new(path);
-    let mut file = File::open(&path)?;
+    pub fn get(&self, key: &str) -> Option<&DomainConfig> {
+        self.data.get(key)
+    }
 
-    let mut buffer = String::new();
-    file.read_to_string(&mut buffer)?;
-
-    let providers = serde_json::from_str(&buffer)?;
-
-    Ok(providers)
+    pub fn amount(&self) -> usize {
+        self.data.len()
+    }
 }
 
 #[test]
 fn test_load_data() {
-    let data = load_data("./rules/data.min.json").expect("fail to read data.min.json");
-    assert_ne!(0, data.providers.len());
+    let data = Domains::load_from_file("./rules.toml").expect("fail to read rules file");
+    assert_ne!(0, data.amount());
 
-    let bili = data.providers.get("m.bilibili.com");
+    let bili = data.get("_test");
     assert!(bili.is_some());
 
     let bili = bili.unwrap();
-    assert_eq!(vec!["bbid", "ts"], bili.rules);
+    assert_eq!(vec!["_field1", "_field2"], bili.rules);
 }
