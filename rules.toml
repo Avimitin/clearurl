@@ -43,3 +43,16 @@ import = "bilibili.com"
 rules = []
 redirection = true
 match_sub = false
+
+
+
+# this data is for test only
+["_test"]
+import = "default"
+rules = [
+  "_field1",
+  "_field2",
+]
+redirection = true
+match_sub = true
+
