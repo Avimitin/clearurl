@@ -1,11 +1,11 @@
 ["default"]
-same_as = ""
+import = ""
 rules = []
 redirection = false
 match_sub = false
 
 ["twitter.com"]
-same_as = ""
+import = ""
 rules = [
   "(?:ref_?)?src",
   "s",
@@ -17,7 +17,7 @@ redirection = false
 match_sub = true
 
 ["bilibili.com"]
-same_as = ""
+import = ""
 rules = [
     "callback",
     "spm_id_from",
@@ -39,7 +39,7 @@ redirection = false
 match_sub = false
 
 ["b23.tv"]
-same_as = "bilibili.com"
+import = "bilibili.com"
 rules = []
 redirection = true
 match_sub = false
