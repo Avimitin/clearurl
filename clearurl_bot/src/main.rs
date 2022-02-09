@@ -1,14 +1,15 @@
-use lazy_static::lazy_static;
-use teloxide::prelude2::*;
-use clearurl::filter;
 use clearurl::data;
+use clearurl::filter;
+use lazy_static::lazy_static;
 use log::{error, info};
+use teloxide::prelude2::*;
 
 lazy_static! {
     static ref HTTP_REGEX_MATCH_RULE: regex::Regex = regex::Regex::new(
         r"(http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+)",
     )
     .unwrap();
+    // TODO: use portable path for rules file
     static ref RULES:data::Domains = data::Domains::load_from_file("../rules.toml").unwrap();
 }
 
@@ -26,7 +27,7 @@ async fn main() {
         let capture = filter_domain(text);
         let mut buffer = String::new();
         for cap in capture {
-            let mut url = match url::Url::parse(&cap[1]){
+            let mut url = match url::Url::parse(&cap[1]) {
                 Ok(u) => u,
                 Err(e) => {
                     error!("Fail to parse url: {} from capture. Error: {}", &cap[1], e);
@@ -38,7 +39,7 @@ async fn main() {
                 Err(e) => {
                     error!("{}", e);
                     return respond(());
-                },
+                }
             };
             buffer.push_str(url.as_str());
             buffer.push('\n');
