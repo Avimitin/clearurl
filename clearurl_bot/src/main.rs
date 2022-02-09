@@ -1,4 +1,3 @@
-use dotenv;
 use lazy_static::lazy_static;
 use teloxide::prelude2::*;
 use clearurl::filter;
