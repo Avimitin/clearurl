@@ -3,6 +3,7 @@ use lazy_static::lazy_static;
 use teloxide::prelude2::*;
 use clearurl::filter;
 use clearurl::data;
+use log::{error, info};
 
 lazy_static! {
     static ref HTTP_REGEX_MATCH_RULE: regex::Regex = regex::Regex::new(
@@ -17,7 +18,7 @@ async fn main() {
     dotenv::dotenv().ok();
 
     teloxide::enable_logging!();
-    log::info!("Starting dices_bot...");
+    info!("Starting clearurl_bot...");
 
     let bot = Bot::from_env().auto_send();
 
@@ -26,13 +27,28 @@ async fn main() {
         let capture = filter_domain(text);
         let mut buffer = String::new();
         for cap in capture {
-            let mut url = url::Url::parse(&cap[1]).unwrap();
-            let url = filter::filter(&RULES, &mut url).unwrap();
+            let mut url = match url::Url::parse(&cap[1]){
+                Ok(u) => u,
+                Err(e) => {
+                    error!("Fail to parse url: {} from capture. Error: {}", &cap[1], e);
+                    return respond(());
+                }
+            };
+            let url = match filter::filter(&RULES, &mut url) {
+                Ok(u) => u,
+                Err(e) => {
+                    error!("{}", e);
+                    return respond(());
+                },
+            };
             buffer.push_str(url.as_str());
         }
 
         if !buffer.is_empty() {
-            bot.send_message(message.chat_id(), buffer).await.unwrap();
+            let resp = bot.send_message(message.chat_id(), buffer).await;
+            if let Err(e) = resp {
+                error!("{}", e);
+            }
         }
         respond(())
     })
