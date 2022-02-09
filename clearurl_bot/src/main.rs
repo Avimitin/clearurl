@@ -42,6 +42,7 @@ async fn main() {
                 },
             };
             buffer.push_str(url.as_str());
+            buffer.push('\n');
         }
 
         if !buffer.is_empty() {
