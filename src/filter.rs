@@ -3,7 +3,6 @@ use anyhow::{bail, Context, Result};
 use url::form_urlencoded;
 use url::Url;
 
-
 pub async fn clear(domains: &Domains, url: &mut Url) -> Result<Url> {
     remove_query(domains, url).await
 }
@@ -80,7 +79,7 @@ async fn test_filter() {
     let data =
         crate::data::Domains::load_from_file("./rules.toml").expect("fail to read rules.toml");
 
-    // test normal rule
+    // * test normal rule
     let mut url = Url::parse(
         "https://twitter.com/CiloRanko/status/1478401918792011776?s=20&t=AVPOmNLtaozrA0Ccp6DyAw",
     )
@@ -91,8 +90,12 @@ async fn test_filter() {
         "https://twitter.com/CiloRanko/status/1478401918792011776"
     );
 
-    // test redirection
-    let mut url = Url::parse("https://b23.tv/Mf6vJOp").unwrap();
+    // * test redirection
+    let mut url = Url::parse("https://b23.tv/C0lw13z").unwrap();
     let url = clear(&data, &mut url).await.unwrap();
-    assert_eq!(url.as_str(), "https://www.bilibili.com/video/BV14L4y1x7Hn?p=1");
+    assert_eq!(
+        url.as_str(),
+        // normal queries will be kept
+        "https://www.bilibili.com/video/BV14L4y1x7Hn?p=1"
+    );
 }
