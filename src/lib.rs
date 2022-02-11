@@ -5,3 +5,5 @@
 
 pub mod data;
 pub mod filter;
+
+pub use filter::clear;
