@@ -1,7 +1,7 @@
 ["default"]
 import = ""
 rules = []
-redirection = false
+should_redirect = false
 match_sub = false
 
 ["twitter.com"]
@@ -13,10 +13,10 @@ rules = [
   "ref_url",
   "t"
 ]
-redirection = false
+should_redirect = false
 match_sub = true
 
-["bilibili.com"]
+["www.bilibili.com"]
 import = ""
 rules = [
     "callback",
@@ -35,13 +35,13 @@ rules = [
     "timestamp",
     "unique_k"
 ]
-redirection = false
+should_redirect = false
 match_sub = false
 
 ["b23.tv"]
 import = "bilibili.com"
 rules = []
-redirection = true
+should_redirect = true
 match_sub = false
 
 
@@ -53,6 +53,6 @@ rules = [
   "_field1",
   "_field2",
 ]
-redirection = true
+should_redirect = true
 match_sub = true
 

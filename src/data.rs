@@ -8,7 +8,7 @@ use std::path::Path;
 #[derive(Serialize, Deserialize, Debug)]
 pub struct DomainConfig {
     pub match_sub: bool,
-    pub redirection: bool,
+    pub should_redirect: bool,
     pub import: String,
     pub rules: Vec<String>,
 }
