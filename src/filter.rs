@@ -96,6 +96,6 @@ async fn test_filter() {
     assert_eq!(
         url.as_str(),
         // normal queries will be kept
-        "https://www.bilibili.com/video/BV14L4y1x7Hn?p=1"
+        "https://www.bilibili.com/video/BV1GJ411x7h7?p=1"
     );
 }
