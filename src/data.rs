@@ -44,7 +44,7 @@ impl Domains {
     /// use clearurl::Domains;
     ///
     /// let domain = "b23.tv";
-    /// let domain_ruleset = Domains::load_from_file("path to file");
+    /// let domain_ruleset = Domains::load_from_file("./rules.toml").unwrap();
     /// let domain_rule = domain_ruleset.get(domain).unwrap();
     ///
     /// assert!(domain_rule.should_redirect);
