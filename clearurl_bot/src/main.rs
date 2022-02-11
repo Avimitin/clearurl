@@ -34,7 +34,7 @@ async fn main() {
                     return respond(());
                 }
             };
-            let url = match filter::filter(&RULES, &mut url) {
+            let url = match filter::clear(&RULES, &mut url).await {
                 Ok(u) => u,
                 Err(e) => {
                     error!("{}", e);
