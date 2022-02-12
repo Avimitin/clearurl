@@ -94,7 +94,7 @@ rules = []
 should_redirect = true
 match_sub = false
 
-["amazon.com"]
+["www.amazon.com"]
 import = ""
 rules = [
   "p[fd]_rd_[a-z]*",

@@ -2,6 +2,7 @@ use crate::data::Domains;
 use anyhow::{bail, Context, Result};
 use url::form_urlencoded;
 use url::Url;
+use regex::Regex;
 
 pub async fn clear(domains: &Domains, url: &mut Url) -> Result<Url> {
     remove_query(domains, url).await
@@ -55,7 +56,8 @@ async fn remove_query(domains: &Domains, url: &mut Url) -> Result<Url> {
     for (key, val) in ori_queries {
         let mut has_same = false;
         for query in blacklist {
-            if key == query.as_str() {
+            let re = Regex::new(query.as_str()).unwrap();
+            if re.is_match(&key) {
                 has_same = true;
                 break;
             }
@@ -97,5 +99,14 @@ async fn test_filter() {
         url.as_str(),
         // normal queries will be kept
         "https://www.bilibili.com/video/BV1GJ411x7h7?p=1"
+    );
+
+    // * test regex
+    let mut url = Url::parse("https://www.amazon.com/b/?node=226184&ref_=Oct_d_odnav_d_1077068_1&pd_rd_w=ZjwFQ&pf_rd_p=0f6f8a08-29ea-497e-8cb4-0ccf91422740&pf_rd_r=YMQ5XPAZHYHV77HCENY7&pd_rd_r=27c502f2-951f-4a8c-9478-381febc5e5bc&pd_rd_wg=NxaQ1").unwrap();
+    let url = clear(&data, &mut url).await.unwrap();
+    assert_eq!(
+        url.as_str(),
+        // normal queries will be kept
+        "https://www.amazon.com/b/?node=226184"
     );
 }
