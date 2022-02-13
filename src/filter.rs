@@ -9,7 +9,7 @@ pub async fn clear(domains: &Domains, url: &mut Url) -> Result<Url> {
 }
 
 #[async_recursion::async_recursion]
-async fn remove_query(domains: &Domains, url: &mut Url) -> Result<Url> {
+async fn remove_query(rulesets: &Domains, url: &mut Url) -> Result<Url> {
     // get domain from url
     let domain = url.domain();
     if domain.is_none() {
@@ -18,7 +18,7 @@ async fn remove_query(domains: &Domains, url: &mut Url) -> Result<Url> {
     let domain = domain.unwrap();
 
     // get rule by domain
-    let mut domain_rule = domains
+    let mut domain_rule = rulesets 
         .get(domain)
         .context(format!("no rule for domain: <{}>", domain))?;
 
@@ -28,7 +28,7 @@ async fn remove_query(domains: &Domains, url: &mut Url) -> Result<Url> {
             "fail to make redirection for domain {}",
             url.as_str()
         ))?;
-        return remove_query(domains, &mut final_url).await;
+        return remove_query(rulesets, &mut final_url).await;
     }
 
     if domain_rule.rules.is_empty() {
