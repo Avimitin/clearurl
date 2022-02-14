@@ -26,13 +26,12 @@ impl Domains {
     ///
     /// This function return error when IO fail or parse progress fail.
     pub fn load_from_file(path: &str) -> Result<Domains> {
-        let path = Path::new(path);
-        let mut file = File::open(&path)?;
+        let mut raw = std::fs::read(path).context(format!("Fail to read from file {}", path))?;
 
-        let mut buffer = String::new();
-        file.read_to_string(&mut buffer)?;
-
-        let data: HashMap<String, DomainConfig> = toml::from_str(&buffer)?;
+        let data: HashMap<String, DomainConfig> = toml::from_str(
+            std::str::from_utf8(&raw)
+                .context(format!("fail to convert file {} to string literal", path))?,
+        )?;
 
         Ok(Domains { data })
     }
