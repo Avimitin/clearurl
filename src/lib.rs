@@ -33,5 +33,25 @@ to remove tracking queries to protect your privacy.
 pub mod data;
 pub mod filter;
 
+use anyhow::{Context, Result};
+use data::RulesStorage;
 pub use filter::clear;
-pub use data::Domains;
+use std::collections::HashMap;
+use url::Url;
+
+pub struct UrlCleaner {
+    ruleset: RulesStorage,
+}
+
+impl UrlCleaner {
+    pub fn from_file(path: &str) -> Result<UrlCleaner> {
+        Ok(UrlCleaner {
+            ruleset: RulesStorage::load_from_file(path)?
+        })
+    }
+
+    pub fn clear(&mut self, url: &str) -> Result<Url> {
+        filter::clear(&self.ruleset, url);
+        unimplemented!()
+    }
+}

@@ -1,9 +1,41 @@
-use anyhow::Result;
+use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::prelude::*;
 use std::path::Path;
+
+/// RulesStorage store rules for domain.
+/// It embed a hashmap nd expose limited hashmap function to guarantee
+/// runtime robustness.
+pub struct RulesStorage(HashMap<String, DomainConfig>);
+
+impl RulesStorage {
+    /// Load rules for domain from given file. The file must be in toml format.
+    ///
+    /// # Errors
+    ///
+    /// This function return error when IO fail or parse progress fail.
+    pub fn load_from_file(path: &str) -> Result<RulesStorage> {
+        let mut raw = std::fs::read(path).context(format!("Fail to read from file {}", path))?;
+
+        let data: HashMap<String, DomainConfig> = toml::from_str(
+            std::str::from_utf8(&raw)
+                .context(format!("fail to convert file {} to string literal", path))?,
+        )?;
+
+        Ok(RulesStorage ( data ))
+    }
+
+    /// Get return the rule for given domain
+    pub fn get(&self, key: &str) -> Option<&DomainConfig> {
+        self.0.get(key)
+    }
+
+    pub fn amount(&self) -> usize {
+        self.0.len()
+    }
+}
 
 // Rule for single domain
 #[derive(Serialize, Deserialize, Debug)]
@@ -14,52 +46,30 @@ pub struct DomainConfig {
     pub rules: Vec<String>,
 }
 
-// A parsed domain rule set
-pub struct Domains {
-    data: HashMap<String, DomainConfig>,
-}
-
-impl Domains {
-    /// Load rules for domain from given file. The file must be in toml format.
-    ///
-    /// # Errors
-    ///
-    /// This function return error when IO fail or parse progress fail.
-    pub fn load_from_file(path: &str) -> Result<Domains> {
-        let mut raw = std::fs::read(path).context(format!("Fail to read from file {}", path))?;
-
-        let data: HashMap<String, DomainConfig> = toml::from_str(
-            std::str::from_utf8(&raw)
-                .context(format!("fail to convert file {} to string literal", path))?,
-        )?;
-
-        Ok(Domains { data })
+impl DomainConfig {
+    /// Return true if this domain needs to import rules from other domain
+    pub fn has_import(&self) -> bool {
+        self.import.is_empty()
     }
 
-    /// Get return the rule for given domain
-    ///
-    /// # Example
-    /// ```
-    /// use clearurl::Domains;
-    ///
-    /// let domain = "b23.tv";
-    /// let domain_ruleset = Domains::load_from_file("./rules.toml").unwrap();
-    /// let domain_rule = domain_ruleset.get(domain).unwrap();
-    ///
-    /// assert!(domain_rule.should_redirect);
-    /// ```
-    pub fn get(&self, key: &str) -> Option<&DomainConfig> {
-        self.data.get(key)
+    /// Return true if there is no rule for this domain
+    pub fn has_rules(&self) -> bool {
+        self.rules.is_empty()
     }
 
-    pub fn amount(&self) -> usize {
-        self.data.len()
+    /// Copy rules from given vector. It called `str.to_owned` to create new owned
+    /// rule. And those imported data will be store in memory. So it is suggested
+    /// to call `has_rules` before `import_rules`.
+    pub fn import_rules(&mut self, from: &[String]) {
+        for rule in from {
+            self.rules.push(rule.to_owned());
+        }
     }
 }
 
 #[test]
 fn test_load_data() {
-    let data = Domains::load_from_file("./rules.toml").expect("fail to read rules file");
+    let data = RulesStorage::load_from_file("./rules.toml").expect("fail to read rules file");
     assert_ne!(0, data.amount());
 
     let bili = data.get("_test");
