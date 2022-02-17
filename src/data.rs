@@ -24,7 +24,7 @@ impl RulesStorage {
                 .context(format!("fail to convert file {} to string literal", path))?,
         )?;
 
-        Ok(RulesStorage ( data ))
+        Ok(RulesStorage(data))
     }
 
     /// Get return the rule for given domain
@@ -43,6 +43,11 @@ pub struct DomainConfig {
     pub match_sub: bool,
     pub should_redirect: bool,
     pub import: String,
+
+    /// once imported, never be false
+    #[serde(skip_serializing)]
+    is_imported: bool,
+
     pub rules: Vec<String>,
 }
 
@@ -64,6 +69,11 @@ impl DomainConfig {
         for rule in from {
             self.rules.push(rule.to_owned());
         }
+        self.is_imported = true;
+    }
+
+    pub fn is_imported(&self) -> bool {
+        self.is_imported
     }
 }
 

@@ -1,53 +1,55 @@
-use crate::data::RulesStorage;
-use anyhow::{bail, Context, Result, anyhow};
+use crate::data::{RulesStorage, DomainConfig};
+use anyhow::{anyhow, bail, Context, Result};
 use regex::Regex;
 use url::form_urlencoded;
 use url::Url;
 
-#[async_recursion::async_recursion]
 pub async fn clear(rulestore: &RulesStorage, url: &str) -> Result<Url> {
     // The variable `purl` stands for parsed url. I need the original url value for bug tracking.
     // So I use a new variable not shadow the original `url` variable here.
     let mut purl = Url::parse(url)?;
 
     // check if the url is valid
-    purl.domain().ok_or_else(|| anyhow!("fail to parse url {}", url))?;
+    let domain = purl
+        .domain()
+        .ok_or_else(|| anyhow!("fail to parse url {}", url))?;
+    let mut domain_rule = rulestore
+        .get(domain)
+        .context(format!("get pre-set rule for domain: {}", url))?;
+
+    // if the domain rule should be redirect, get the final url and ruleset
+    if domain_rule.should_redirect {
+        purl = get_final_url(url)
+            .await
+            .context(format!("redirect from domain {}", url))?;
+        let final_domain = purl
+            .domain()
+            .ok_or_else(|| anyhow!("fail to parse url {} redirect from: {}", purl.as_str(), url))?;
+
+        domain_rule = rulestore.get(final_domain).context(format!(
+            "get pre-set rule for domain: {} redirect from: {}",
+            purl.as_str(),
+            url
+        ))?;
+    }
+
+    // if the domain need to import from other domain and not import yet
+    if domain_rule.has_import() && !domain_rule.is_imported() {
+        unimplemented!("implement rule import")
+    }
+
+    // If the domain still have no rule after import, it means that no rules
+    // is declare in the rules.toml file.
+    if !domain_rule.has_rules() {
+        // it is safe to use unwrap because we already handle the `None` value.
+        bail!("no rule for domain: <{}>", purl.domain().unwrap())
+    }
 
     // finally remove all the queries
-    remove_query(rulestore, &mut purl).await
+    remove_query(domain_rule, &mut purl).await
 }
 
-#[async_recursion::async_recursion]
-async fn remove_query(rulesets: &RulesStorage, url: &mut Url) -> Result<Url> {
-    // it is ok to unwrap here as the `filter::clear()` function has handle the
-    // None value.
-    let domain = url.domain().unwrap();
-
-    // get rule by domain
-    let mut domain_rule = rulesets
-        .get(domain)
-        .context(format!("no rule for domain: <{}>", domain))?;
-
-    // if the domain require redirect
-    if domain_rule.should_redirect {
-        let mut final_url = get_final_url(url.as_str()).await.context(format!(
-            "fail to make redirection for domain {}",
-            url.as_str()
-        ))?;
-        return remove_query(rulesets, &mut final_url).await;
-    }
-
-    if !domain_rule.has_rules() {
-        if domain_rule.has_import() {
-            // let mut import = rulesets.get(&domain_rule.import).context(format!(
-            //     "import rule for {} from {}",
-            //     domain, domain_rule.import
-            // ))?;
-        } else {
-            bail!("no rule for domain: <{}>", domain)
-        }
-    }
-
+async fn remove_query(domain_rule: &DomainConfig, url: &mut Url) -> Result<Url> {
     let blacklist = &domain_rule.rules;
 
     // take a copy of the query string for later use
@@ -115,7 +117,7 @@ async fn test_filter() {
 
     // * test regex
     let url = clear(
-        &data, 
+        &data,
         "https://www.amazon.com/b/?node=226184&ref_=Oct_d_odnav_d_1077068_1&pd_rd_w=ZjwFQ&pf_rd_p=0f6f8a08-29ea-497e-8cb4-0ccf91422740&pf_rd_r=YMQ5XPAZHYHV77HCENY7&pd_rd_r=27c502f2-951f-4a8c-9478-381febc5e5bc&pd_rd_wg=NxaQ1"
     )
     .await
