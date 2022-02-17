@@ -1,4 +1,4 @@
-use crate::data::{RulesStorage, DomainConfig};
+use crate::data::{DomainConfig, RulesStorage};
 use anyhow::{anyhow, bail, Context, Result};
 use regex::Regex;
 use url::form_urlencoded;
@@ -9,12 +9,18 @@ pub async fn clear(rulestore: &RulesStorage, url: &str) -> Result<Url> {
     // So I use a new variable not shadow the original `url` variable here.
     let mut purl = Url::parse(url)?;
 
-    // check if the url is valid
-    let domain = purl
+    // if there is no queries in url, return it immediately
+    if purl.query().is_none() {
+        return Ok(purl);
+    }
+
+    // We need a url copy to have this domain is mutable during runtime
+    let mut domain = purl
         .domain()
-        .ok_or_else(|| anyhow!("fail to parse url {}", url))?;
+        .ok_or_else(|| anyhow!("fail to parse url {}", url))?
+        .to_owned();
     let mut domain_rule = rulestore
-        .get(domain)
+        .get(&domain)
         .context(format!("get pre-set rule for domain: {}", url))?;
 
     // if the domain rule should be redirect, get the final url and ruleset
@@ -22,11 +28,12 @@ pub async fn clear(rulestore: &RulesStorage, url: &str) -> Result<Url> {
         purl = get_final_url(url)
             .await
             .context(format!("redirect from domain {}", url))?;
-        let final_domain = purl
+        domain = purl
             .domain()
-            .ok_or_else(|| anyhow!("fail to parse url {} redirect from: {}", purl.as_str(), url))?;
+            .ok_or_else(|| anyhow!("fail to parse url {} redirect from: {}", purl.as_str(), url))?
+            .to_owned();
 
-        domain_rule = rulestore.get(final_domain).context(format!(
+        domain_rule = rulestore.get(&domain).context(format!(
             "get pre-set rule for domain: {} redirect from: {}",
             purl.as_str(),
             url
@@ -34,32 +41,42 @@ pub async fn clear(rulestore: &RulesStorage, url: &str) -> Result<Url> {
     }
 
     // if the domain need to import from other domain and not import yet
-    if domain_rule.has_import() && !domain_rule.is_imported() {
-        unimplemented!("implement rule import")
-    }
+    let import_rule = if domain_rule.has_import() {
+        Some(rulestore.get(&domain_rule.import).context(format!(
+            "domain {} import data from {}",
+            domain, domain_rule.import
+        ))?)
+    } else {
+        None
+    };
 
     // If the domain still have no rule after import, it means that no rules
     // is declare in the rules.toml file.
-    if !domain_rule.has_rules() {
+    if !domain_rule.has_rules() && !domain_rule.has_import() {
         // it is safe to use unwrap because we already handle the `None` value.
         bail!("no rule for domain: <{}>", purl.domain().unwrap())
     }
 
     // finally remove all the queries
-    remove_query(domain_rule, &mut purl).await
+    remove_query(&mut purl, domain_rule, import_rule).await
 }
 
-async fn remove_query(domain_rule: &DomainConfig, url: &mut Url) -> Result<Url> {
+async fn remove_query(
+    url: &mut Url,
+    domain_rule: &DomainConfig,
+    import_rule: Option<&DomainConfig>,
+) -> Result<Url> {
     let blacklist = &domain_rule.rules;
+    let imp_blacklist = if let Some(imp_rule) = import_rule {
+        Some(&imp_rule.rules)
+    } else {
+        None
+    };
 
-    // take a copy of the query string for later use
-    let ori_queries = url.query();
-    // if no query behind, return domain back immediately
-    if ori_queries.is_none() {
-        return Ok(url.to_owned());
-    }
-    // get the copy of the queries
-    let ori_queries = ori_queries.unwrap().to_string();
+    // Take a copy of the query string for later use.
+    // It is safe to call unwrap here cuz we had handle `None` in the
+    // `filter::clear()` function.
+    let ori_queries = url.query().unwrap().to_owned();
 
     // and parse it into pairs -> [(k, v)]
     let ori_queries = form_urlencoded::parse(ori_queries.as_bytes());
@@ -71,12 +88,28 @@ async fn remove_query(domain_rule: &DomainConfig, url: &mut Url) -> Result<Url> 
     for (key, val) in ori_queries {
         let mut has_same = false;
         for query in blacklist {
-            let re = Regex::new(query.as_str()).unwrap();
+            let re = Regex::new(query.as_str())
+                .context(format!("illgal regex rule: {}", query.as_str()))?;
             if re.is_match(&key) {
                 has_same = true;
                 break;
             }
         }
+
+        if let Some(query) = imp_blacklist {
+            for q in query {
+                let re = Regex::new(q.as_str()).context(format!(
+                    "illgal regex rule '{}' in {}'s import",
+                    q.as_str(),
+                    url
+                ))?;
+                if re.is_match(&key) {
+                    has_same = true;
+                    break;
+                }
+            }
+        }
+
         if !has_same {
             url.query_pairs_mut().append_pair(&key, &val);
         }
