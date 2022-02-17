@@ -5,7 +5,7 @@ use url::form_urlencoded;
 use url::Url;
 
 #[async_recursion::async_recursion]
-pub async fn clear(domains: &RulesStorage, url: &str) -> Result<Url> {
+pub async fn clear(rulestore: &RulesStorage, url: &str) -> Result<Url> {
     // The variable `purl` stands for parsed url. I need the original url value for bug tracking.
     // So I use a new variable not shadow the original `url` variable here.
     let mut purl = Url::parse(url)?;
@@ -14,7 +14,7 @@ pub async fn clear(domains: &RulesStorage, url: &str) -> Result<Url> {
     purl.domain().ok_or_else(|| anyhow!("fail to parse url {}", url))?;
 
     // finally remove all the queries
-    remove_query(domains, &mut purl).await
+    remove_query(rulestore, &mut purl).await
 }
 
 #[async_recursion::async_recursion]
