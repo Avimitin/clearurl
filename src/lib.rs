@@ -39,19 +39,31 @@ pub use filter::clear;
 use std::collections::HashMap;
 use url::Url;
 
+/// UrlCleaner is a convenient struct which wrap the ruleset data and
+/// corresbonding function together.
 pub struct UrlCleaner {
+    /// ruleset contains rules for domain
     ruleset: RulesStorage,
 }
 
 impl UrlCleaner {
+    /// This function read rule data from file. The file must be in toml format.
+    ///
+    /// # Error
+    ///
+    /// Return error when IO fail or meeting unexpected format.
     pub fn from_file(path: &str) -> Result<UrlCleaner> {
         Ok(UrlCleaner {
             ruleset: RulesStorage::load_from_file(path)?
         })
     }
 
+    /// The clear function accepct a url string and try to parse it into a new
+    /// Url struct without tracking queries.
     pub fn clear(&mut self, url: &str) -> Result<Url> {
         filter::clear(&self.ruleset, url);
         unimplemented!()
     }
 }
+
+// vim: tw=80 fo+=t
