@@ -1,23 +1,27 @@
 use crate::data::RulesStorage;
-use anyhow::{bail, Context, Result};
+use anyhow::{bail, Context, Result, anyhow};
 use regex::Regex;
 use url::form_urlencoded;
 use url::Url;
 
 #[async_recursion::async_recursion]
 pub async fn clear(domains: &RulesStorage, url: &str) -> Result<Url> {
-    let mut url = Url::parse(url)?;
-    remove_query(domains, &mut url).await
+    // The variable `purl` stands for parsed url. I need the original url value for bug tracking.
+    // So I use a new variable not shadow the original `url` variable here.
+    let mut purl = Url::parse(url)?;
+
+    // check if the url is valid
+    purl.domain().ok_or_else(|| anyhow!("fail to parse url {}", url))?;
+
+    // finally remove all the queries
+    remove_query(domains, &mut purl).await
 }
 
 #[async_recursion::async_recursion]
 async fn remove_query(rulesets: &RulesStorage, url: &mut Url) -> Result<Url> {
-    // get domain from url
-    let domain = url.domain();
-    if domain.is_none() {
-        bail!("invalid url: {}", url.as_str())
-    }
-    let domain = domain.unwrap();
+    // it is ok to unwrap here as the `filter::clear()` function has handle the
+    // None value.
+    let domain = url.domain().unwrap();
 
     // get rule by domain
     let mut domain_rule = rulesets
@@ -122,3 +126,4 @@ async fn test_filter() {
         "https://www.amazon.com/b/?node=226184"
     );
 }
+// vim: tw=80 fo+=t
