@@ -9,11 +9,6 @@ pub async fn clear(rulestore: &RulesStorage, url: &str) -> Result<Url> {
     // So I use a new variable not shadow the original `url` variable here.
     let mut purl = Url::parse(url)?;
 
-    // if there is no queries in url, return it immediately
-    if purl.query().is_none() {
-        return Ok(purl);
-    }
-
     // We need a url copy to have this domain is mutable during runtime
     let mut domain = purl
         .domain()
@@ -39,6 +34,13 @@ pub async fn clear(rulestore: &RulesStorage, url: &str) -> Result<Url> {
             url
         ))?;
     }
+
+    // if there is no queries in url, return it immediately
+    if purl.query().is_none() {
+        trace!("No query found for url: {}", url);
+        return Ok(purl);
+    }
+
 
     // if the domain need to import from other domain and not import yet
     let import_rule = if domain_rule.has_import() {
