@@ -54,7 +54,7 @@ impl DomainConfig {
 
     /// Return true if there is no rule for this domain
     pub fn has_rules(&self) -> bool {
-        self.rules.is_empty()
+        !self.rules.is_empty()
     }
 }
 
