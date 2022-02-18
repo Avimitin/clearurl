@@ -43,11 +43,6 @@ pub struct DomainConfig {
     pub match_sub: bool,
     pub should_redirect: bool,
     pub import: String,
-
-    /// once imported, never be false
-    #[serde(skip_serializing)]
-    is_imported: bool,
-
     pub rules: Vec<String>,
 }
 
@@ -60,20 +55,6 @@ impl DomainConfig {
     /// Return true if there is no rule for this domain
     pub fn has_rules(&self) -> bool {
         self.rules.is_empty()
-    }
-
-    /// Copy rules from given vector. It called `str.to_owned` to create new owned
-    /// rule. And those imported data will be store in memory. So it is suggested
-    /// to call `has_rules` before `import_rules`.
-    pub fn import_rules(&mut self, from: &[String]) {
-        for rule in from {
-            self.rules.push(rule.to_owned());
-        }
-        self.is_imported = true;
-    }
-
-    pub fn is_imported(&self) -> bool {
-        self.is_imported
     }
 }
 
