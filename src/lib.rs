@@ -33,9 +33,9 @@ to remove tracking queries to protect your privacy.
 pub mod data;
 pub mod filter;
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 use data::RulesStorage;
-pub use filter::clear;
+use filter::clear;
 use std::collections::HashMap;
 use url::Url;
 
@@ -60,9 +60,8 @@ impl UrlCleaner {
 
     /// The clear function accepct a url string and try to parse it into a new
     /// Url struct without tracking queries.
-    pub fn clear(&mut self, url: &str) -> Result<Url> {
-        filter::clear(&self.ruleset, url);
-        unimplemented!()
+    pub async fn clear(&mut self, url: &str) -> Result<Url> {
+        filter::clear(&self.ruleset, url).await
     }
 }
 
