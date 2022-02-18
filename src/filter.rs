@@ -1,10 +1,14 @@
 use crate::data::{DomainConfig, RulesStorage};
 use anyhow::{anyhow, bail, Context, Result};
 use regex::Regex;
+use tracing::{span, trace, info, Level};
 use url::form_urlencoded;
 use url::Url;
 
 pub async fn clear(rulestore: &RulesStorage, url: &str) -> Result<Url> {
+    let clear_rec = span!(Level::TRACE, "Clear Process", url = url);
+    let _clear_rec_guard = clear_rec.enter();
+
     // The variable `purl` stands for parsed url. I need the original url value for bug tracking.
     // So I use a new variable not shadow the original `url` variable here.
     let mut purl = Url::parse(url)?;
@@ -23,6 +27,13 @@ pub async fn clear(rulestore: &RulesStorage, url: &str) -> Result<Url> {
         purl = get_final_url(url)
             .await
             .context(format!("redirect from domain {}", url))?;
+
+        trace!(
+            redirect_from = url,
+            redirect_to = purl.as_str(),
+            "url redirected",
+        );
+
         domain = purl
             .domain()
             .ok_or_else(|| anyhow!("fail to parse url {} redirect from: {}", purl.as_str(), url))?
@@ -128,6 +139,9 @@ async fn get_final_url(url: &str) -> Result<Url> {
 
 #[tokio::test]
 async fn test_filter() {
+    let test_collect = tracing_subscriber::fmt().with_max_level(Level::TRACE).finish();
+    tracing::subscriber::set_global_default(test_collect).unwrap();
+
     let data = RulesStorage::load_from_file("./rules.toml").expect("fail to read rules.toml");
 
     // * test normal rule
