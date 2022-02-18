@@ -80,12 +80,9 @@ async fn remove_query(
     import_rule: Option<&DomainConfig>,
 ) -> Result<Url> {
     let blacklist = &domain_rule.rules;
-    let imp_blacklist = if let Some(imp_rule) = import_rule {
-        Some(&imp_rule.rules)
-    } else {
-        None
-    };
-
+    let imp_blacklist =  import_rule.map(|imp_rule| {
+        &imp_rule.rules
+    });
     // Take a copy of the query string for later use.
     // It is safe to call unwrap here cuz we had handle `None` in the
     // `filter::clear()` function.
