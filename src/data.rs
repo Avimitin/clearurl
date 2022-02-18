@@ -49,7 +49,7 @@ pub struct DomainConfig {
 impl DomainConfig {
     /// Return true if this domain needs to import rules from other domain
     pub fn has_import(&self) -> bool {
-        self.import.is_empty()
+        !self.import.is_empty()
     }
 
     /// Return true if there is no rule for this domain
