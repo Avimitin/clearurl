@@ -17,7 +17,7 @@ pub async fn clear(rulestore: &RulesStorage, url: &str) -> Result<Url> {
     // We need a url copy to have this domain is mutable during runtime
     let mut domain = purl
         .domain()
-        .ok_or_else(|| anyhow!("fail to parse url {}", url))?
+        .ok_or_else(|| anyhow!("no domain for url {}", url))?
         .to_owned();
     let mut domain_rule = rulestore
         .get(&domain)
