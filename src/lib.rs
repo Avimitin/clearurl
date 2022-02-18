@@ -35,8 +35,6 @@ pub mod filter;
 
 use anyhow::Result;
 use data::RulesStorage;
-use filter::clear;
-use std::collections::HashMap;
 use url::Url;
 
 /// UrlCleaner is a convenient struct which wrap the ruleset data and

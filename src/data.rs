@@ -1,9 +1,6 @@
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::fs::File;
-use std::io::prelude::*;
-use std::path::Path;
 
 /// RulesStorage store rules for domain.
 /// It embed a hashmap nd expose limited hashmap function to guarantee
@@ -17,7 +14,7 @@ impl RulesStorage {
     ///
     /// This function return error when IO fail or parse progress fail.
     pub fn load_from_file(path: &str) -> Result<RulesStorage> {
-        let mut raw = std::fs::read(path).context(format!("Fail to read from file {}", path))?;
+        let raw = std::fs::read(path).context(format!("Fail to read from file {}", path))?;
 
         let data: HashMap<String, DomainConfig> = toml::from_str(
             std::str::from_utf8(&raw)

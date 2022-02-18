@@ -1,7 +1,7 @@
 use crate::data::{DomainConfig, RulesStorage};
 use anyhow::{anyhow, bail, Context, Result};
 use regex::Regex;
-use tracing::{span, trace, info, Level};
+use tracing::{span, trace, Level};
 use url::form_urlencoded;
 use url::Url;
 
