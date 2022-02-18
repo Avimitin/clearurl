@@ -58,7 +58,7 @@ impl UrlCleaner {
 
     /// The clear function accepct a url string and try to parse it into a new
     /// Url struct without tracking queries.
-    pub async fn clear(&mut self, url: &str) -> Result<Url> {
+    pub async fn clear(&self, url: &str) -> Result<Url> {
         filter::clear(&self.ruleset, url).await
     }
 }
