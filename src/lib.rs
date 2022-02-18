@@ -52,7 +52,7 @@ impl UrlCleaner {
     /// Return error when IO fail or meeting unexpected format.
     pub fn from_file(path: &str) -> Result<UrlCleaner> {
         Ok(UrlCleaner {
-            ruleset: RulesStorage::load_from_file(path)?
+            ruleset: RulesStorage::load_from_file(path)?,
         })
     }
 

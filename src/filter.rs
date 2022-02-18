@@ -52,7 +52,6 @@ pub async fn clear(rulestore: &RulesStorage, url: &str) -> Result<Url> {
         return Ok(purl);
     }
 
-
     // if the domain need to import from other domain and not import yet
     let import_rule = if domain_rule.has_import() {
         Some(rulestore.get(&domain_rule.import).context(format!(
@@ -80,9 +79,7 @@ async fn remove_query(
     import_rule: Option<&DomainConfig>,
 ) -> Result<Url> {
     let blacklist = &domain_rule.rules;
-    let imp_blacklist =  import_rule.map(|imp_rule| {
-        &imp_rule.rules
-    });
+    let imp_blacklist = import_rule.map(|imp_rule| &imp_rule.rules);
     // Take a copy of the query string for later use.
     // It is safe to call unwrap here cuz we had handle `None` in the
     // `filter::clear()` function.
@@ -136,7 +133,9 @@ async fn get_final_url(url: &str) -> Result<Url> {
 
 #[tokio::test]
 async fn test_filter() {
-    let test_collect = tracing_subscriber::fmt().with_max_level(Level::TRACE).finish();
+    let test_collect = tracing_subscriber::fmt()
+        .with_max_level(Level::TRACE)
+        .finish();
     tracing::subscriber::set_global_default(test_collect).unwrap();
 
     let data = RulesStorage::load_from_file("./rules.toml").expect("fail to read rules.toml");
