@@ -12,8 +12,7 @@ lazy_static! {
     static ref CLEANER: Arc<UrlCleaner> = Arc::new(UrlCleaner::from_file("../rules.toml").unwrap());
 }
 
-#[tokio::main]
-async fn main() {
+async fn run() {
     dotenv::dotenv().ok();
 
     teloxide::enable_logging!();
@@ -48,6 +47,11 @@ async fn main() {
         respond(())
     })
     .await;
+}
+
+#[tokio::main]
+async fn main() {
+    run().await
 }
 
 fn filter_domain(text: &str) -> regex::CaptureMatches {
