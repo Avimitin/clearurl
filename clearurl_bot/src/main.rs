@@ -4,6 +4,8 @@ use log::{error, info};
 use teloxide::{RequestError, prelude2::*};
 use std::sync::Arc;
 
+mod bot;
+
 lazy_static! {
     static ref HTTP_REGEX_MATCH_RULE: regex::Regex = regex::Regex::new(
         r"(http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+)",
