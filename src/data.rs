@@ -5,6 +5,7 @@ use std::collections::HashMap;
 /// RulesStorage store rules for domain.
 /// It embed a hashmap nd expose limited hashmap function to guarantee
 /// runtime robustness.
+#[derive(Clone)]
 pub struct RulesStorage(HashMap<String, DomainConfig>);
 
 impl RulesStorage {
@@ -35,7 +36,7 @@ impl RulesStorage {
 }
 
 // Rule for single domain
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Clone, Deserialize, Debug)]
 pub struct DomainConfig {
     pub match_sub: bool,
     pub should_redirect: bool,

@@ -39,6 +39,7 @@ use url::Url;
 
 /// UrlCleaner is a convenient struct which wrap the ruleset data and
 /// corresbonding function together.
+#[derive(Clone)]
 pub struct UrlCleaner {
     /// ruleset contains rules for domain
     ruleset: RulesStorage,
