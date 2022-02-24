@@ -48,6 +48,17 @@ async fn run() {
             },
         ),
     );
+
+    Dispatcher::builder(bot, update_handler)
+        .dependencies(dptree::deps![bot_config, http_regex_rule])
+        .default_handler(|upd| async move {
+            log::warn!("Unhandle update from chat {}", upd.chat().unwrap().id)
+        })
+        .error_handler(LoggingErrorHandler::with_custom_text("Fail to handle"))
+        .build()
+        .setup_ctrlc_handler()
+        .dispatch()
+        .await;
 }
 
 struct Config {
