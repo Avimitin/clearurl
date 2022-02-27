@@ -53,7 +53,8 @@ async fn handle_link_message(
 }
 
 fn build_runtime() -> (AutoSend<Bot>, Arc<UrlCleaner>, Arc<regex::Regex>) {
-    let clearurl_file_path = env::var("CLEARURL_FILE").unwrap_or(String::from("./rules.toml"));
+    let clearurl_file_path =
+        env::var("CLEARURL_FILE").unwrap_or_else(|_| String::from("./rules.toml"));
     let bot = Bot::from_env().auto_send();
     let cleaner = Arc::new(UrlCleaner::from_file(&clearurl_file_path).unwrap());
     let http_regex_rule = Arc::new(
@@ -75,19 +76,17 @@ fn build_handler() -> Handler<'static, DependencyMap, Result<(), RequestError>> 
     )
 }
 
-pub async fn run() {
+pub async fn run() -> Result<()> {
     teloxide::enable_logging!();
     dotenv::dotenv().ok();
 
-    let groups = env::var("CLBOT_ENABLE_GROUPS").expect("You must setup enable groups");
+    let groups = env::var("CLBOT_ENABLE_GROUPS").with_context(|| "You must setup enable groups")?;
     let groups: Vec<i64> = groups
         .split(',')
-        .map(|x|
-             x.parse::<i64>().
-                expect(&format!(
-                    "Fail to parse group `{}` to int64, please check your $CLBOT_ENABLE_GROUPS variable.", x)
-                    )
-            )
+        .map(|x| x.parse::<i64>()
+            .with_context(|| format!(
+                    "Fail to parse group `{}` to int64, please check your $CLBOT_ENABLE_GROUPS variable.", x))
+            .unwrap())
         .collect();
 
     log::info!("Enabled groups: {:?}", groups);
@@ -103,7 +102,7 @@ pub async fn run() {
         "Starting bot: {}",
         bot.get_me()
             .await
-            .expect("fail to get bot information, please check your token correctness.")
+            .with_context(|| "fail to get bot information, please check your token correctness.")?
             .user
             .first_name
     );
@@ -116,4 +115,6 @@ pub async fn run() {
         .setup_ctrlc_handler()
         .dispatch()
         .await;
+
+    Ok(())
 }
