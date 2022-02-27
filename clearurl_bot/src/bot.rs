@@ -1,5 +1,7 @@
+use anyhow::{Context, Result};
 use clearurl::UrlCleaner;
 use log::error;
+use std::env;
 use std::sync::Arc;
 use teloxide::{dispatching2::UpdateFilterExt, prelude2::*, types::Update, RequestError};
 
@@ -51,8 +53,9 @@ async fn handle_link_message(
 }
 
 fn build_runtime() -> (AutoSend<Bot>, Arc<UrlCleaner>, Arc<regex::Regex>) {
+    let clearurl_file_path = env::var("CLEARURL_FILE").unwrap_or(String::from("./rules.toml"));
     let bot = Bot::from_env().auto_send();
-    let cleaner = Arc::new(UrlCleaner::from_file("../rules.toml").unwrap());
+    let cleaner = Arc::new(UrlCleaner::from_file(&clearurl_file_path).unwrap());
     let http_regex_rule = Arc::new(
         regex::Regex::new(
             r"(http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+)",
@@ -75,13 +78,35 @@ fn build_handler() -> Handler<'static, DependencyMap, Result<(), RequestError>> 
 pub async fn run() {
     teloxide::enable_logging!();
     dotenv::dotenv().ok();
-    log::info!("Starting bot...");
+
+    let groups = env::var("CLBOT_ENABLE_GROUPS").expect("You must setup enable groups");
+    let groups: Vec<i64> = groups
+        .split(',')
+        .map(|x|
+             x.parse::<i64>().
+                expect(&format!(
+                    "Fail to parse group `{}` to int64, please check your $CLBOT_ENABLE_GROUPS variable.", x)
+                    )
+            )
+        .collect();
+
+    log::info!("Enabled groups: {:?}", groups);
 
     let bot_config = Config {
-        enable_groups: Arc::new(vec![]),
+        enable_groups: Arc::new(groups),
     };
 
     let (bot, cleaner, http_regex_rule) = build_runtime();
+
+    log::info!("Loaded URL rules: {}", cleaner.amount());
+    log::info!(
+        "Starting bot: {}",
+        bot.get_me()
+            .await
+            .expect("fail to get bot information, please check your token correctness.")
+            .user
+            .first_name
+    );
 
     Dispatcher::builder(bot, build_handler())
         .dependencies(dptree::deps![bot_config, http_regex_rule, cleaner])

@@ -62,6 +62,10 @@ impl UrlCleaner {
     pub async fn clear(&self, url: &str) -> Result<Url> {
         filter::clear(&self.ruleset, url).await
     }
+
+    pub fn amount(&self) -> usize {
+        self.ruleset.amount()
+    }
 }
 
 // vim: tw=80 fo+=t
