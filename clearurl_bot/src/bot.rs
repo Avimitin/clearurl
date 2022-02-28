@@ -1,6 +1,5 @@
-use anyhow::{Context, Result};
+use anyhow::{Context, Result, bail};
 use clearurl::UrlCleaner;
-use log::error;
 use std::env;
 use std::sync::Arc;
 use teloxide::{dispatching2::UpdateFilterExt, prelude2::*, types::Update, RequestError};
@@ -22,32 +21,61 @@ impl Config {
     }
 }
 
+async fn parse_links(input: &str, regex: &regex::Regex, cleaner: &UrlCleaner) -> Result<String> {
+    let caps = regex.captures_iter(input);
+    let mut buffer = String::new();
+    for cap in caps {
+        // Get the first capture
+        let orig_url = &cap[1];
+        let url = cleaner.clear(orig_url).await?;
+
+        // If the final result is as same as the input
+        if url.as_str() == orig_url {
+            continue;
+        }
+
+        buffer.push_str(url.as_str());
+        buffer.push('\n');
+    }
+
+    if buffer.is_empty() {
+        bail!("No rule matches");
+    }
+
+    Ok(buffer)
+}
+
+#[tokio::test]
+async fn test_parse_link() {
+    // rick roll
+    let input = "https://www.bilibili.com/video/av928861104";
+    let regex = regex::Regex::new(r"(http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+)").unwrap();
+    let cleaner = UrlCleaner::from_file("../rules.toml").unwrap();
+    let link = parse_links(input, &regex, &cleaner).await;
+
+    // it should return empty string
+    assert!(link.is_err());
+
+    // hit red
+    let input = "https://b23.tv/YfzhsWH";
+    let link = parse_links(input, &regex, &cleaner).await.unwrap();
+
+    // It should return expected string
+    assert_eq!(link.as_str(), "https://www.bilibili.com/video/BV1vZ4y1Z7Y7?p=1\n");
+}
+
 async fn handle_link_message(
     msg: Message,
     bot: AutoSend<Bot>,
     cleaner: Arc<UrlCleaner>,
     regex: Arc<regex::Regex>,
 ) -> Result<(), RequestError> {
-    let caps = regex.captures_iter(msg.text().unwrap_or(""));
-    let mut buffer = String::new();
-    for cap in caps {
-        let url = &cap[1];
-        let url = match cleaner.clear(url).await {
-            Ok(u) => u,
-            Err(e) => {
-                error!("{}", e);
-                return respond(());
-            }
-        };
-        buffer.push_str(url.as_str());
-        buffer.push('\n');
-    }
-
-    if !buffer.is_empty() {
-        let resp = bot.send_message(msg.chat_id(), buffer).await;
-        if let Err(e) = resp {
-            error!("{}", e);
-        }
+    let resp_text = parse_links(msg.text().unwrap_or(""), &regex, &cleaner).await;
+    // Error are prompt when parse fail, or no rule matches
+    // This happen a lot when the bot is handling in a large group
+    // So we just throw those error.
+    if let Ok(resp) = resp_text {
+        bot.send_message(msg.chat_id(), resp).await?;
     }
     respond(())
 }
