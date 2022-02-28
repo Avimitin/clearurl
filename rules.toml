@@ -28,7 +28,7 @@ rules = [
   "(?:%3F)?spm",
   "(?:%3F)?vn(?:_[a-z]*)+",
   "(?:%3F)?tracking_source",
-  "(?:%3F)?ceneo_spo"
+  "(?:%3F)?ceneo_spo",
 ]
 should_redirect = false
 match_sub = false
@@ -44,21 +44,13 @@ match_sub = true
 import = ""
 match_sub = false
 should_redirect = false
-rules = [
-  "bbid",
-  "ts"
-]
+rules = ["bbid", "ts"]
 
 ["live.bilibili.com"]
 import = ""
 match_sub = false
 should_redirect = false
-rules = [
-  "visit_id",
-  "session_id",
-  "broadcast_type",
-  "is_room_feed"
-]
+rules = ["visit_id", "session_id", "broadcast_type", "is_room_feed"]
 
 ["www.bilibili.com"]
 import = ""
@@ -135,11 +127,7 @@ should_redirect = false
 
 ["youtube.com"]
 import = ""
-rules = [
-  "feature",
-  "gclid",
-  "kw"
-]
+rules = ["feature", "gclid", "kw"]
 match_sub = false
 should_redirect = false
 
@@ -157,43 +145,76 @@ rules = [
   "\\$3p",
   "%24original_url",
   "\\$original_url",
-  "_branch_match_id"
+  "_branch_match_id",
 ]
 
 ["bing.com"]
 import = ""
 match_sub = true
 should_redirect = false
-rules = [
-  "cvid",
-  "form",
-  "sk",
-  "sp",
-  "sc",
-  "qs",
-  "qp"
-]
+rules = ["cvid", "form", "sk", "sp", "sc", "qs", "qp"]
 
 ["twitch.com"]
 import = ""
 match_sub = true
 should_redirect = false
-rules = [
-  "tt_medium",
-  "tt_content"
-]
+rules = ["tt_medium", "tt_content"]
 
 ["smzdm.com"]
 import = ""
 match_sub = true
 should_redirect = false
-rules = [
-  "zdm_ss",
-  "from"
-]
+rules = ["zdm_ss", "from"]
 
 ["post.m.smzdm.com"]
 import = "smzdm.com"
+match_sub = false
+should_redirect = false
+rules = []
+
+["taobao.com"]
+import = ""
+match_sub = false
+should_redirect = false
+rules = [
+  "price",
+  "sourceType",
+  "suid",
+  "ut_sk",
+  "un",
+  "share_crt_v",
+  "sp_tk",
+  "cpp",
+  "shareurl",
+  "short_name",
+  "app",
+  "scm[_a-z-]*",
+  "pvid",
+  "algo_expid",
+  "algo_pvid",
+  "ns",
+  "abbucket",
+  "ali_refid",
+  "ali_trackid",
+  "acm",
+  "utparam",
+  "pos",
+  "abtest",
+  "trackInfo",
+  "utkn",
+  "scene",
+  "mytmenu",
+  "turing_bucket",
+  "lygClk",
+  "impid",
+  "bftTag",
+  "bftRwd",
+  "spm",
+  "_u",
+]
+
+["item.taobao.com"]
+import = "taobao.com"
 match_sub = false
 should_redirect = false
 rules = []
