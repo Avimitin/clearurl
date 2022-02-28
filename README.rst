@@ -6,6 +6,7 @@ This is a Rust implementation for ClearURL.
 
 todo
 ----
+.. role:: strike
 
 * A Telegram bot
 
