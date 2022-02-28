@@ -182,6 +182,21 @@ rules = [
   "tt_content"
 ]
 
+["smzdm.com"]
+import = ""
+match_sub = true
+should_redirect = false
+rules = [
+  "zdm_ss",
+  "from"
+]
+
+["post.m.smzdm.com"]
+import = "smzdm.com"
+match_sub = false
+should_redirect = false
+rules = []
+
 # this data is for test only
 ["_test"]
 import = "default"

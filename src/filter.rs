@@ -172,5 +172,18 @@ async fn test_filter() {
         // normal queries will be kept
         "https://www.amazon.com/b/?node=226184"
     );
+
+    // * test import
+    let url = clear(
+        &data,
+        "https://post.m.smzdm.com/p/aoxzv08r/?zdm_ss=iOS__hczZ7LgGInW%2BUXtAcwyZGSVdJqcPFvT98aEipRx9K%2BPOH7mQ0YGD3w%3D%3D&from=other",
+    )
+    .await
+    .unwrap();
+    assert_eq!(
+        url.as_str(),
+        // normal queries will be kept
+        "https://post.m.smzdm.com/p/aoxzv08r/",
+    );
 }
 // vim: tw=80 fo+=t
