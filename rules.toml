@@ -78,6 +78,7 @@ rules = [
   "share_session_id",
   "timestamp",
   "unique_k",
+  "-Arouter",
 ]
 should_redirect = false
 match_sub = false
