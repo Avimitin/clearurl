@@ -219,6 +219,12 @@ match_sub = false
 should_redirect = false
 rules = []
 
+["maimai.cn"]
+import = ""
+match_sub = false
+should_redirect = false
+rules = ["src", "share_channel"]
+
 # this data is for test only
 ["_test"]
 import = "default"
