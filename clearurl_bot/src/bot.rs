@@ -75,7 +75,9 @@ async fn handle_link_message(
     // This happen a lot when the bot is handling in a large group
     // So we just throw those error.
     if let Ok(resp) = resp_text {
-        bot.send_message(msg.chat_id(), resp).await?;
+        bot.send_message(msg.chat_id(), resp)
+            .disable_web_page_preview(true) // no need for the preview, it is annoying
+            .await?;
     }
     respond(())
 }
