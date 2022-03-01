@@ -1,4 +1,4 @@
-use anyhow::{Context, Result, bail};
+use anyhow::{bail, Context, Result};
 use clearurl::UrlCleaner;
 use std::env;
 use std::sync::Arc;
@@ -49,7 +49,10 @@ async fn parse_links(input: &str, regex: &regex::Regex, cleaner: &UrlCleaner) ->
 async fn test_parse_link() {
     // rick roll
     let input = "https://www.bilibili.com/video/av928861104";
-    let regex = regex::Regex::new(r"(http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+)").unwrap();
+    let regex = regex::Regex::new(
+        r"(http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+)",
+    )
+    .unwrap();
     let cleaner = UrlCleaner::from_file("../rules.toml").unwrap();
     let link = parse_links(input, &regex, &cleaner).await;
 
@@ -61,7 +64,10 @@ async fn test_parse_link() {
     let link = parse_links(input, &regex, &cleaner).await.unwrap();
 
     // It should return expected string
-    assert_eq!(link.as_str(), "https://www.bilibili.com/video/BV1vZ4y1Z7Y7?p=1\n");
+    assert_eq!(
+        link.as_str(),
+        "https://www.bilibili.com/video/BV1vZ4y1Z7Y7?p=1\n"
+    );
 }
 
 async fn handle_link_message(
