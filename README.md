@@ -1,22 +1,15 @@
-clearurl
-========
+# clearurl
 
-This is a Rust implementation for ClearURL.
+This is a Rust implementation of the ClearURL.
 
-
-todo
-----
-.. role:: strike
+## todo
 
 * A Telegram bot
-
-  * :strike:`Handle normal message` (**DONE**)
-  * Handle commands like [/addrule, /delrule, /addgroup]
+  * ~~Handle normal message~~ (**DONE**)
+  * ~~Handle commands like [/addrule, /delrule, /addgroup]~~ (Not gonna support[^1])
   * Handle inline message
   * Handle channel message
-
-* A Cli tool
-
-  * Read URL from pasteboard
-
 * A Web frontend
+
+[^1]: I want the bot to be silent and don't have too much functionality.
+It is a clearurl bot, just do the cleaning job.
