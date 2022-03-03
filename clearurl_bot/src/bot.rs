@@ -157,7 +157,11 @@ async fn handle_commands(
         Commands::Stats => {
             let met = ctx.total_url_met.lock().unwrap();
             let cleared = ctx.total_cleared.lock().unwrap();
-            format!("Total URL Met: {}\nTotal URL Cleared: {}", *met, *cleared)
+            let ratio: f32 = (*cleared as f32 / *met as f32) * 100.0;
+            format!(
+                "Total URL Met: {}\nTotal URL Cleared: {}\nPercentage: {} %",
+                *met, *cleared, ratio
+            )
         }
         Commands::Help => Commands::descriptions(),
     };
