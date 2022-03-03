@@ -51,14 +51,19 @@ async fn parse_links(
     let caps = regex.captures_iter(input);
     let mut buffer = String::from("Clean URL: \n");
     let mut indeed_cleared = false;
+    let mut counter = 0;
     for cap in caps {
         // Get the first capture
         let orig_url = &cap[1];
-        let url = cleaner.clear(orig_url).await?;
+        counter += 1;
 
-        // we have met a new url, so we add a counter here
-        let mut met = ctx.total_url_met.lock().unwrap();
-        *met += 1;
+        let url = match cleaner.clear(orig_url).await {
+            Ok(url) => url,
+            Err(e) => {
+                log::error!("Clean {} met error: {}", orig_url, e);
+                continue
+            },
+        };
 
         // If the final result is as same as the input
         if url.as_str() == orig_url {
@@ -75,6 +80,10 @@ async fn parse_links(
         let mut cleared = ctx.total_cleared.lock().unwrap();
         *cleared += 1;
     }
+
+    // we have met N url, add this up to it
+    let mut met = ctx.total_url_met.lock().unwrap();
+    *met += counter;
 
     // if we didn't do anything to the url
     if !indeed_cleared {
