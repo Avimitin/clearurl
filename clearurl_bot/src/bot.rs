@@ -2,7 +2,10 @@ use anyhow::{bail, Context, Result};
 use clearurl::UrlCleaner;
 use std::env;
 use std::sync::{Arc, Mutex};
-use teloxide::{dispatching2::UpdateFilterExt, prelude2::*, types::Update, RequestError};
+use teloxide::{
+    dispatching2::UpdateFilterExt, prelude2::*, types::Update, utils::command::BotCommand,
+    RequestError,
+};
 
 #[derive(Clone)]
 struct Config {
@@ -24,9 +27,17 @@ impl Config {
 #[derive(Clone, Debug)]
 struct BotRuntime {
     // TODO: Use chrono to record uptime
-
     total_url_met: Arc<Mutex<u32>>,
     total_cleared: Arc<Mutex<u32>>,
+}
+
+#[derive(BotCommand, Clone)]
+#[command(rename = "lowercase", description = "Clearurl Bot Commands")]
+enum Commands {
+    #[command(description = "Show this message")]
+    Help,
+    #[command(description = "Show bot stats")]
+    Stats,
 }
 
 async fn parse_links(
@@ -136,6 +147,26 @@ async fn handle_link_message(
     respond(())
 }
 
+async fn handle_commands(
+    msg: Message,
+    bot: AutoSend<Bot>,
+    cmd: Commands,
+    ctx: BotRuntime,
+) -> Result<(), RequestError> {
+    let text = match cmd {
+        Commands::Stats => {
+            let met = ctx.total_url_met.lock().unwrap();
+            let cleared = ctx.total_cleared.lock().unwrap();
+            format!("Total URL Met: {}\nTotal URL Cleared: {}", *met, *cleared)
+        }
+        Commands::Help => Commands::descriptions(),
+    };
+
+    bot.send_message(msg.chat_id(), text).await?;
+
+    respond(())
+}
+
 fn build_runtime() -> (
     AutoSend<Bot>,
     Arc<UrlCleaner>,
@@ -162,12 +193,18 @@ fn build_runtime() -> (
 }
 
 fn build_handler() -> Handler<'static, DependencyMap, Result<(), RequestError>> {
-    Update::filter_message().branch(
-        dptree::filter(|msg: Message, cfg: Config| {
-            msg.text().is_some() && cfg.is_enabled_group(msg.chat_id())
-        })
-        .endpoint(handle_link_message),
-    )
+    Update::filter_message()
+        .branch(
+            dptree::entry()
+                .filter_command::<Commands>()
+                .endpoint(handle_commands),
+        )
+        .branch(
+            dptree::filter(|msg: Message, cfg: Config| {
+                msg.text().is_some() && cfg.is_enabled_group(msg.chat_id())
+            })
+            .endpoint(handle_link_message),
+        )
 }
 
 pub async fn run() -> Result<()> {
