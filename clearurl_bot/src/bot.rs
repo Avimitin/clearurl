@@ -160,7 +160,11 @@ async fn handle_commands(
         Commands::Stats => {
             let met = ctx.total_url_met.lock().unwrap();
             let cleared = ctx.total_cleared.lock().unwrap();
-            let ratio: f32 = (*cleared as f32 / *met as f32) * 100.0;
+            let ratio: f32 = if *met == 0 {
+                0.0
+            } else {
+                (*cleared as f32 / *met as f32) * 100.0
+            };
             let start_up = ctx.start_up_time;
             let now = Utc::now();
             let duration = now.signed_duration_since(*start_up);
