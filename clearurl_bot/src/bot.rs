@@ -1,4 +1,5 @@
 use anyhow::{bail, Context, Result};
+use chrono::prelude::*;
 use clearurl::UrlCleaner;
 use std::env;
 use std::sync::{Arc, Mutex};
@@ -27,6 +28,7 @@ impl Config {
 #[derive(Clone, Debug)]
 struct BotRuntime {
     // TODO: Use chrono to record uptime
+    start_up_time: Arc<DateTime<Utc>>,
     total_url_met: Arc<Mutex<u32>>,
     total_cleared: Arc<Mutex<u32>>,
 }
@@ -90,6 +92,7 @@ async fn test_parse_link() {
     .unwrap();
     let cleaner = UrlCleaner::from_file("../rules.toml").unwrap();
     let mut rt = BotRuntime {
+        start_up_time: Arc::new(Utc::now()),
         total_url_met: Arc::new(Mutex::new(0)),
         total_cleared: Arc::new(Mutex::new(0)),
     };
@@ -158,8 +161,12 @@ async fn handle_commands(
             let met = ctx.total_url_met.lock().unwrap();
             let cleared = ctx.total_cleared.lock().unwrap();
             let ratio: f32 = (*cleared as f32 / *met as f32) * 100.0;
+            let start_up = ctx.start_up_time;
+            let now = Utc::now();
+            let duration = now.signed_duration_since(*start_up);
             format!(
-                "Total URL Met: {}\nTotal URL Cleared: {}\nPercentage: {} %",
+                "Bot Uptime: {}h {}m {}s\nTotal URL Met: {}\nTotal URL Cleared: {}\nPercentage: {} %",
+                duration.num_hours(), duration.num_minutes(), duration.num_seconds(),
                 *met, *cleared, ratio
             )
         }
@@ -189,6 +196,7 @@ fn build_runtime() -> (
     );
 
     let rt = BotRuntime {
+        start_up_time: Arc::new(Utc::now()),
         total_url_met: Arc::new(Mutex::new(0)),
         total_cleared: Arc::new(Mutex::new(0)),
     };
