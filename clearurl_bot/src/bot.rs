@@ -1,7 +1,7 @@
 use anyhow::{bail, Context, Result};
 use clearurl::UrlCleaner;
 use std::env;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use teloxide::{dispatching2::UpdateFilterExt, prelude2::*, types::Update, RequestError};
 
 #[derive(Clone)]
@@ -21,24 +21,50 @@ impl Config {
     }
 }
 
-async fn parse_links(input: &str, regex: &regex::Regex, cleaner: &UrlCleaner) -> Result<String> {
+#[derive(Clone, Debug)]
+struct BotRuntime {
+    // TODO: Use chrono to record uptime
+
+    total_url_met: Arc<Mutex<u32>>,
+    total_cleared: Arc<Mutex<u32>>,
+}
+
+async fn parse_links(
+    input: &str,
+    regex: &regex::Regex,
+    cleaner: &UrlCleaner,
+    ctx: &mut BotRuntime,
+) -> Result<String> {
     let caps = regex.captures_iter(input);
     let mut buffer = String::from("Clean URL: \n");
+    let mut indeed_cleared = false;
     for cap in caps {
         // Get the first capture
         let orig_url = &cap[1];
         let url = cleaner.clear(orig_url).await?;
 
+        // we have met a new url, so we add a counter here
+        let mut met = ctx.total_url_met.lock().unwrap();
+        *met += 1;
+
         // If the final result is as same as the input
         if url.as_str() == orig_url {
             continue;
+        } else {
+            // we actually clear this url
+            indeed_cleared = true;
         }
 
         buffer.push_str(url.as_str());
         buffer.push('\n');
+
+        // we have cleared a url, so we add a counter here
+        let mut cleared = ctx.total_cleared.lock().unwrap();
+        *cleared += 1;
     }
 
-    if buffer.is_empty() {
+    // if we didn't do anything to the url
+    if !indeed_cleared {
         bail!("No rule matches");
     }
 
@@ -47,27 +73,48 @@ async fn parse_links(input: &str, regex: &regex::Regex, cleaner: &UrlCleaner) ->
 
 #[tokio::test]
 async fn test_parse_link() {
-    // rick roll
-    let input = "https://www.bilibili.com/video/av928861104";
     let regex = regex::Regex::new(
         r"(http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+)",
     )
     .unwrap();
     let cleaner = UrlCleaner::from_file("../rules.toml").unwrap();
-    let link = parse_links(input, &regex, &cleaner).await;
+    let mut rt = BotRuntime {
+        total_url_met: Arc::new(Mutex::new(0)),
+        total_cleared: Arc::new(Mutex::new(0)),
+    };
+
+    // rick roll
+    let input = "https://www.bilibili.com/video/av928861104";
+    let link = parse_links(input, &regex, &cleaner, &mut rt).await;
 
     // it should return empty string
     assert!(link.is_err());
 
+    // lock the runtime
+    {
+        let cleared = rt.total_cleared.lock().unwrap();
+        let met = rt.total_url_met.lock().unwrap();
+        assert_eq!(*met, 1);
+        assert_eq!(*cleared, 0);
+    } // release the runtime
+
     // hit red
     let input = "https://b23.tv/YfzhsWH";
-    let link = parse_links(input, &regex, &cleaner).await.unwrap();
+    let link = parse_links(input, &regex, &cleaner, &mut rt).await.unwrap();
 
     // It should return expected string
     assert_eq!(
         link.as_str(),
-        "https://www.bilibili.com/video/BV1vZ4y1Z7Y7?p=1\n"
+        "Clean URL: \nhttps://www.bilibili.com/video/BV1vZ4y1Z7Y7?p=1\n"
     );
+
+    // lock the runtime
+    {
+        let cleared = rt.total_cleared.lock().unwrap();
+        let met = rt.total_url_met.lock().unwrap();
+        assert_eq!(*met, 2);
+        assert_eq!(*cleared, 1);
+    } // release the runtime
 }
 
 async fn handle_link_message(
@@ -75,8 +122,9 @@ async fn handle_link_message(
     bot: AutoSend<Bot>,
     cleaner: Arc<UrlCleaner>,
     regex: Arc<regex::Regex>,
+    mut rt: BotRuntime,
 ) -> Result<(), RequestError> {
-    let resp_text = parse_links(msg.text().unwrap_or(""), &regex, &cleaner).await;
+    let resp_text = parse_links(msg.text().unwrap_or(""), &regex, &cleaner, &mut rt).await;
     // Error are prompt when parse fail, or no rule matches
     // This happen a lot when the bot is handling in a large group
     // So we just throw those error.
@@ -88,7 +136,12 @@ async fn handle_link_message(
     respond(())
 }
 
-fn build_runtime() -> (AutoSend<Bot>, Arc<UrlCleaner>, Arc<regex::Regex>) {
+fn build_runtime() -> (
+    AutoSend<Bot>,
+    Arc<UrlCleaner>,
+    Arc<regex::Regex>,
+    BotRuntime,
+) {
     let clearurl_file_path =
         env::var("CLEARURL_FILE").unwrap_or_else(|_| String::from("./rules.toml"));
     let bot = Bot::from_env().auto_send();
@@ -100,7 +153,12 @@ fn build_runtime() -> (AutoSend<Bot>, Arc<UrlCleaner>, Arc<regex::Regex>) {
         .expect("Illegal http regex rule"),
     );
 
-    (bot, cleaner, http_regex_rule)
+    let rt = BotRuntime {
+        total_url_met: Arc::new(Mutex::new(0)),
+        total_cleared: Arc::new(Mutex::new(0)),
+    };
+
+    (bot, cleaner, http_regex_rule, rt)
 }
 
 fn build_handler() -> Handler<'static, DependencyMap, Result<(), RequestError>> {
@@ -131,7 +189,7 @@ pub async fn run() -> Result<()> {
         enable_groups: Arc::new(groups),
     };
 
-    let (bot, cleaner, http_regex_rule) = build_runtime();
+    let (bot, cleaner, http_regex_rule, rt) = build_runtime();
 
     log::info!("Loaded URL rules: {}", cleaner.amount());
     log::info!(
@@ -144,7 +202,7 @@ pub async fn run() -> Result<()> {
     );
 
     Dispatcher::builder(bot, build_handler())
-        .dependencies(dptree::deps![bot_config, http_regex_rule, cleaner])
+        .dependencies(dptree::deps![bot_config, http_regex_rule, cleaner, rt])
         .default_handler(|_| async move {})
         .error_handler(LoggingErrorHandler::with_custom_text("Fail to handle"))
         .build()
