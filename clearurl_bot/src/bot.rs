@@ -170,7 +170,7 @@ async fn handle_commands(
             let duration = now.signed_duration_since(*start_up);
             format!(
                 "Bot Uptime: {}h {}m {}s\nTotal URL Met: {}\nTotal URL Cleared: {}\nPercentage: {} %",
-                duration.num_hours(), duration.num_minutes(), duration.num_seconds(),
+                duration.num_hours(), duration.num_minutes() % 60, duration.num_seconds() % 60,
                 *met, *cleared, ratio
             )
         }
