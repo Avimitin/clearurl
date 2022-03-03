@@ -23,7 +23,7 @@ impl Config {
 
 async fn parse_links(input: &str, regex: &regex::Regex, cleaner: &UrlCleaner) -> Result<String> {
     let caps = regex.captures_iter(input);
-    let mut buffer = String::new();
+    let mut buffer = String::from("Clean URL: \n");
     for cap in caps {
         // Get the first capture
         let orig_url = &cap[1];
