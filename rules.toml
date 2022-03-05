@@ -232,6 +232,20 @@ should_redirect = false
 # clean all
 rules = [".*"]
 
+["item.m.jd.com"]
+import = ""
+match_sub = false
+should_redirect = false
+# clean all
+rules = [".*"]
+
+["i-item.jd.com"]
+import = ""
+match_sub = false
+should_redirect = false
+# clean all
+rules = [".*"]
+
 # this data is for test only
 ["_test"]
 import = "default"
