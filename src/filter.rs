@@ -2,25 +2,24 @@ use crate::data::{DomainConfig, RulesStorage};
 use anyhow::{anyhow, bail, Context, Result};
 use regex::Regex;
 use tracing::{span, trace, Level};
-use url::form_urlencoded;
-use url::Url;
+use url::{form_urlencoded, Url};
 
 pub async fn clear(rulestore: &RulesStorage, url: &str) -> Result<Url> {
-    let clear_rec = span!(Level::TRACE, "Clear Process", url = url);
+    let clear_rec = span!(Level::TRACE, "New Clear Process", url = url);
     let _clear_rec_guard = clear_rec.enter();
 
     // The variable `purl` stands for parsed url. I need the original url value for bug tracking.
     // So I use a new variable not shadow the original `url` variable here.
     let mut purl = Url::parse(url)?;
 
-    // We need a url copy to have this domain is mutable during runtime
+    // We need a url copy to have this domain mutable during runtime
     let mut domain = purl
         .domain()
         .ok_or_else(|| anyhow!("no domain for url {}", url))?
         .to_owned();
     let mut domain_rule = rulestore
         .get(&domain)
-        .context(format!("get pre-set rule for domain: {}", url))?;
+        .context(format!("fail to get rule for: {}", url))?;
 
     // if the domain rule should be redirect, get the final url and ruleset
     if domain_rule.should_redirect {
