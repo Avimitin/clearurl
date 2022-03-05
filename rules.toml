@@ -225,6 +225,13 @@ match_sub = false
 should_redirect = false
 rules = ["src", "share_channel"]
 
+["jd.com"]
+import = ""
+match_sub = false
+should_redirect = false
+# clean all
+rules = [".*"]
+
 # this data is for test only
 ["_test"]
 import = "default"
