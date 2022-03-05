@@ -6,6 +6,8 @@ on:
       - 'master'
     paths:
       - "clearurl_bot/**"
+      - "src/**"
+      - ".github/workflows/docker-image.yml"
 
 jobs:
   docker:
