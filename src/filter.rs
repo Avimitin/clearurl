@@ -17,9 +17,22 @@ pub async fn clear(rulestore: &RulesStorage, url: &str) -> Result<Url> {
         .domain()
         .ok_or_else(|| anyhow!("no domain for url {}", url))?
         .to_owned();
-    let mut domain_rule = rulestore
-        .get(&domain)
-        .context(format!("fail to get rule for: {}", url))?;
+
+    // Try to get rule for domain. If no rule for this domain is founded, try
+    // to get default rule and apply to this domain.
+    let mut domain_rule = match rulestore.get(&domain) {
+        Some(dm) => dm,
+        None => {
+            if let Some(default_rule) = rulestore.get("default") {
+                default_rule
+            } else {
+                bail!(
+                    "Fail to find rule for {} and no default rule founded",
+                    domain
+                );
+            }
+        }
+    };
 
     // if the domain rule should be redirect, get the final url and ruleset
     if domain_rule.should_redirect {
@@ -183,6 +196,19 @@ async fn test_filter() {
         url.as_str(),
         // normal queries will be kept
         "https://post.m.smzdm.com/p/aoxzv08r/",
+    );
+
+    // * test default
+    let url = clear(
+        &data,
+        "https://example.com?utm_source=ios",
+    )
+    .await
+    .unwrap();
+    assert_eq!(
+        url.as_str(),
+        // normal queries will be kept
+        "https://example.com/",
     );
 }
 // vim: tw=80 fo+=t
