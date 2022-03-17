@@ -8,12 +8,15 @@ use teloxide::{
     RequestError,
 };
 
+// Config store the necessary configuration for bot runtime.
 #[derive(Clone)]
 struct Config {
+    // Bot will start the filter process only in the enabled groups
     enable_groups: Arc<Vec<i64>>,
 }
 
 impl Config {
+    // Return true if the given group is allow to be used
     pub fn is_enabled_group(&self, g: i64) -> bool {
         // FIXME: we should use binary search here
         for group in self.enable_groups.iter() {
@@ -26,10 +29,14 @@ impl Config {
     }
 }
 
+// BotRuntime store some statistic for the clearurl process.
 #[derive(Clone, Debug)]
 struct BotRuntime {
+    // When did the bot start
     start_up_time: Arc<DateTime<Utc>>,
+    // How many url bot has met
     total_url_met: Arc<Mutex<u32>>,
+    // How many url bot has cleared
     total_cleared: Arc<Mutex<u32>>,
 }
 
