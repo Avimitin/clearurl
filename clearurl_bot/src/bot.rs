@@ -57,13 +57,11 @@ async fn parse_links(
         let orig_url = &cap[1];
         counter += 1;
 
-        let url = match cleaner.clear(orig_url).await {
-            Ok(url) => url,
-            Err(e) => {
-                log::error!("Clean {} met error: {}", orig_url, e);
-                continue
-            },
-        };
+        let url = cleaner.clear(orig_url).await;
+        if url.is_none() {
+            continue;
+        }
+        let url = url.unwrap();
 
         // If the final result is as same as the input
         if url.as_str() == orig_url {
