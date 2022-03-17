@@ -61,7 +61,7 @@ pub async fn clear(rulestore: &RulesStorage, url: &str) -> Result<Url> {
     // if there is no queries in url, return it immediately
     if purl.query().is_none() {
         trace!("No query found for url: {}", url);
-        return Ok(purl);
+        bail!("The URL is clean enough");
     }
 
     // if the domain need to import from other domain and not import yet
