@@ -15,6 +15,7 @@ struct Config {
 
 impl Config {
     pub fn is_enabled_group(&self, g: i64) -> bool {
+        // FIXME: we should use binary search here
         for group in self.enable_groups.iter() {
             if g == *group {
                 return true;
