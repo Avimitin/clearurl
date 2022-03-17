@@ -36,6 +36,7 @@ pub mod filter;
 use anyhow::Result;
 use data::RulesStorage;
 use url::Url;
+use tracing::error;
 
 /// UrlCleaner is a convenient struct which wrap the ruleset data and
 /// corresbonding function together.
@@ -59,8 +60,14 @@ impl UrlCleaner {
 
     /// The clear function accepct a url string and try to parse it into a new
     /// Url struct without tracking queries.
-    pub async fn clear(&self, url: &str) -> Result<Url> {
-        filter::clear(&self.ruleset, url).await
+    pub async fn clear(&self, url: &str) -> Option<Url> {
+        match filter::clear(&self.ruleset, url).await {
+            Ok(url) => Some(url),
+            Err(e) => {
+                error!("Error occur when filtering url {}: {}", url, e);
+                None
+            }
+        }
     }
 
     pub fn amount(&self) -> usize {
