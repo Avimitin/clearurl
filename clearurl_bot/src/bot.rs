@@ -143,6 +143,10 @@ async fn test_parse_link() {
         assert_eq!(*met, 2);
         assert_eq!(*cleared, 1);
     } // release the runtime
+
+    // It should return nothing
+    let input = "https://bit.io";
+    assert!(parse_links(input, &regex, &cleaner, &mut rt).await.is_err());
 }
 
 async fn handle_link_message(
