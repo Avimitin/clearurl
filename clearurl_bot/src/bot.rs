@@ -27,7 +27,6 @@ impl Config {
 
 #[derive(Clone, Debug)]
 struct BotRuntime {
-    // TODO: Use chrono to record uptime
     start_up_time: Arc<DateTime<Utc>>,
     total_url_met: Arc<Mutex<u32>>,
     total_cleared: Arc<Mutex<u32>>,
