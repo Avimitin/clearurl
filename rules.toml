@@ -50,7 +50,7 @@ rules = ["bbid", "ts"]
 import = ""
 match_sub = false
 should_redirect = false
-rules = ["visit_id", "session_id", "broadcast_type", "is_room_feed"]
+rules = ["*"]
 
 ["www.bilibili.com"]
 import = ""
