@@ -246,6 +246,12 @@ should_redirect = false
 # clean all
 rules = [".*"]
 
+["mp.weixin.qq.com"]
+import = ""
+match_sub = false
+should_redirect = false
+rules = ["sharer_shareid", "sharer_sharetime", "chksm", "scene", "mpshare"]
+
 # this data is for test only
 ["_test"]
 import = "default"
