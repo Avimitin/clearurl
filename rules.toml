@@ -55,22 +55,23 @@ rules = ["*"]
 ["www.bilibili.com"]
 import = ""
 rules = [
+  "-Arouter",
   "callback",
-  "spm_id_from",
-  "from_source",
   "from",
-  "seid",
-  "share_source",
+  "from_source",
   "msource",
   "refer_from",
+  "seid",
   "share_medium",
-  "share_source",
   "share_plat",
-  "share_tag",
   "share_session_id",
+  "share_source",
+  "share_source",
+  "share_tag",
+  "spm_id_from",
   "timestamp",
   "unique_k",
-  "-Arouter",
+  "vd_source",
 ]
 should_redirect = false
 match_sub = false
