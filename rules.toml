@@ -41,7 +41,7 @@ match_sub = true
 
 
 ["m.bilibili.com"]
-import = ""
+import = "www.bilibili.com"
 match_sub = false
 should_redirect = false
 rules = ["bbid", "ts"]
