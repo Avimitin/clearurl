@@ -1,0 +1,179 @@
+["default"]
+redirect = false
+sub = []
+ban = [
+  "(?:%3F)?utm(?:_[a-z_]*)?",
+  "(?:%3F)?ga_[a-z_]+",
+  "(?:%3F)?yclid",
+  "(?:%3F)?_openstat",
+  "(?:%3F)?fb_action_(?:types|ids)",
+  "(?:%3F)?fb_(?:source|ref)",
+  "(?:%3F)?fbclid",
+  "(?:%3F)?action_(?:object|type|ref)_map",
+  "(?:%3F)?gs_l",
+  "(?:%3F)?mkt_tok",
+  "(?:%3F)?hmb_(?:campaign|medium|source)",
+  "(?:%3F)?ref_?",
+  "(?:%3F)?referrer",
+  "(?:%3F)?gclid",
+  "(?:%3F)?otm_[a-z_]*",
+  "(?:%3F)?cmpid",
+  "(?:%3F)?os_ehash",
+  "(?:%3F)?_ga",
+  "(?:%3F)?__twitter_impression",
+  "(?:%3F)?wt_?z?mc",
+  "(?:%3F)?wtrid",
+  "(?:%3F)?[a-z]?mc",
+  "(?:%3F)?dclid",
+  "Echobox",
+  "(?:%3F)?spm",
+  "(?:%3F)?vn(?:_[a-z]*)+",
+  "(?:%3F)?tracking_source",
+  "(?:%3F)?ceneo_spo",
+]
+
+["bilibili.com"]
+sub = ["www", "live", "m"]
+ban = [
+  "-Arouter",
+  "bbid",
+  "callback",
+  "from",
+  "from_source",
+  "mid",
+  "msource",
+  "refer_from",
+  "seid",
+  "share_medium",
+  "share_plat",
+  "share_session_id",
+  "share_source",
+  "share_tag",
+  "share_times",
+  "spm_id_from",
+  "timestamp",
+  "ts",
+  "unique_k",
+  "vd_source",
+]
+
+["b23.tv"]
+redirect = true
+ban = "bilibili.com"
+
+["twitter.com"]
+ban = ["(?:ref_?)?src", "s", "cn", "ref_url", "t"]
+
+["www.amazon.com"]
+ban = [
+  "p[fd]_rd_[a-z]*",
+  "qid",
+  "srs?",
+  "__mk_[a-z]{1,3}_[a-z]{1,3}",
+  "spIA",
+  "ms3_c",
+  "[a-z%0-9]*ie",
+  "refRID",
+  "colii?d",
+  "[^a-z%0-9]adId",
+  "qualifier",
+  "_encoding",
+  "smid",
+  "field-lbr_brands_browse-bin",
+  "ref_?",
+  "th",
+  "sprefix",
+  "crid",
+  "keywords",
+  "cv_ct_[a-z]+",
+  "linkCode",
+  "creativeASIN",
+  "ascsubtag",
+  "aaxitk",
+  "hsa_cr_id",
+  "sb-ci-[a-z]+",
+  "rnid",
+  "dchild",
+  "camp",
+  "creative",
+  "s",
+]
+
+["youtube.com"]
+ban = ["feature", "gclid", "kw"]
+
+
+["reddit.com"]
+ban = [
+  "%24deep_link",
+  "\\$deep_link",
+  "correlation_id",
+  "ref_campaign",
+  "ref_source",
+  "%243p",
+  "\\$3p",
+  "%24original_url",
+  "\\$original_url",
+  "_branch_match_id",
+]
+
+["bing.com"]
+ban = ["cvid", "form", "sk", "sp", "sc", "qs", "qp"]
+
+["twitch.com"]
+ban = ["tt_medium", "tt_content"]
+
+["smzdm.com"]
+sub = "post.m"
+ban = ["zdm_ss", "from"]
+
+["taobao.com"]
+sub = ["item"]
+ban = [
+  "price",
+  "sourceType",
+  "suid",
+  "ut_sk",
+  "un",
+  "share_crt_v",
+  "sp_tk",
+  "cpp",
+  "shareurl",
+  "short_name",
+  "app",
+  "scm[_a-z-]*",
+  "pvid",
+  "algo_expid",
+  "algo_pvid",
+  "ns",
+  "abbucket",
+  "ali_refid",
+  "ali_trackid",
+  "acm",
+  "utparam",
+  "pos",
+  "abtest",
+  "trackInfo",
+  "utkn",
+  "scene",
+  "mytmenu",
+  "turing_bucket",
+  "lygClk",
+  "impid",
+  "bftTag",
+  "bftRwd",
+  "spm",
+  "_u",
+]
+
+["maimai.cn"]
+ban = ["src", "share_channel"]
+
+["jd.com"]
+sub = ["i-item", "item.m"]
+# clean all
+ban = [".*"]
+
+["qq.com"]
+sub = ["mp.weixin"]
+ban = ["sharer_shareid", "sharer_sharetime", "chksm", "scene", "mpshare"]
