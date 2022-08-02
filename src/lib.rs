@@ -32,6 +32,7 @@ to remove tracking queries to protect your privacy.
 
 pub mod data;
 pub mod filter;
+mod rules;
 
 use anyhow::Result;
 use data::RulesStorage;
