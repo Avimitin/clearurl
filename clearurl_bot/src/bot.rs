@@ -3,10 +3,12 @@ use chrono::prelude::*;
 use clearurl::UrlCleaner;
 use std::env;
 use std::sync::{Arc, Mutex};
+use teloxide::types::{InlineQueryResult, InlineQueryResultArticle, InputMessageContentText};
 use teloxide::{
-    dispatching2::UpdateFilterExt, prelude2::*, types::Update, utils::command::BotCommand,
-    RequestError,
+    dispatching::UpdateFilterExt, prelude::*, types::Update, utils::command::BotCommands,
 };
+
+use crate::utils;
 
 // Config store the necessary configuration for bot runtime.
 #[derive(Clone)]
@@ -39,7 +41,7 @@ struct BotRuntime {
     total_cleared: Arc<Mutex<u32>>,
 }
 
-#[derive(BotCommand, Clone)]
+#[derive(BotCommands, Clone)]
 #[command(rename = "lowercase", description = "Clearurl Bot Commands")]
 enum Commands {
     #[command(description = "Show this message")]
@@ -154,17 +156,17 @@ async fn handle_link_message(
     cleaner: Arc<UrlCleaner>,
     regex: Arc<regex::Regex>,
     mut rt: BotRuntime,
-) -> Result<(), RequestError> {
+) -> Result<()> {
     let resp_text = parse_links(msg.text().unwrap_or(""), &regex, &cleaner, &mut rt).await;
     // Error are prompt when parse fail, or no rule matches
     // This happen a lot when the bot is handling in a large group
     // So we just throw those error.
     if let Ok(resp) = resp_text {
-        bot.send_message(msg.chat_id(), resp)
+        bot.send_message(msg.chat.id, resp)
             .disable_web_page_preview(true) // no need for the preview, it is annoying
             .await?;
     }
-    respond(())
+    Ok(())
 }
 
 async fn handle_commands(
@@ -172,7 +174,7 @@ async fn handle_commands(
     bot: AutoSend<Bot>,
     cmd: Commands,
     ctx: BotRuntime,
-) -> Result<(), RequestError> {
+) -> Result<()> {
     let text = match cmd {
         Commands::Stats => {
             let met = ctx.total_url_met.lock().unwrap();
@@ -191,12 +193,12 @@ async fn handle_commands(
                 *met, *cleared, ratio
             )
         }
-        Commands::Help => Commands::descriptions(),
+        Commands::Help => Commands::descriptions().to_string(),
     };
 
-    bot.send_message(msg.chat_id(), text).await?;
+    bot.send_message(msg.chat.id, text).await?;
 
-    respond(())
+    Ok(())
 }
 
 fn build_runtime() -> (
@@ -225,23 +227,29 @@ fn build_runtime() -> (
     (bot, cleaner, http_regex_rule, rt)
 }
 
-fn build_handler() -> Handler<'static, DependencyMap, Result<(), RequestError>> {
-    Update::filter_message()
-        .branch(
-            dptree::entry()
-                .filter_command::<Commands>()
-                .endpoint(handle_commands),
-        )
-        .branch(
-            dptree::filter(|msg: Message, cfg: Config| {
-                msg.text().is_some() && cfg.is_enabled_group(msg.chat_id())
-            })
-            .endpoint(handle_link_message),
-        )
+async fn inline_handler(
+    query: InlineQuery,
+    bot: AutoSend<Bot>,
+    cleaner: Arc<UrlCleaner>,
+) -> Result<()> {
+    let response = utils::replace(&query.query, &cleaner);
+    if response.is_err() {
+        anyhow::bail!("no link founded");
+    }
+
+    let response = InlineQueryResultArticle::new(
+        "clearurl_111".to_string(),
+        "URL Cleaner",
+        teloxide::types::InputMessageContent::Text(InputMessageContentText::new(response.unwrap())),
+    )
+    .description("Automatically clean and replace the URL in your text.");
+    let response = vec![InlineQueryResult::Article(response)];
+    bot.answer_inline_query(&query.id, response).await?;
+
+    Ok(())
 }
 
 pub async fn run() -> Result<()> {
-    teloxide::enable_logging!();
     dotenv::dotenv().ok();
 
     let groups = env::var("CLBOT_ENABLE_GROUPS").with_context(|| "You must setup enable groups")?;
@@ -270,12 +278,28 @@ pub async fn run() -> Result<()> {
             .first_name
     );
 
-    Dispatcher::builder(bot, build_handler())
+    let msg_handler = Update::filter_message()
+        .branch(
+            dptree::entry()
+                .filter_command::<Commands>()
+                .endpoint(handle_commands),
+        )
+        .branch(
+            dptree::filter(|msg: Message, cfg: Config| {
+                msg.text().is_some() && cfg.is_enabled_group(msg.chat.id.0)
+            })
+            .endpoint(handle_link_message),
+        );
+    let inline_handler = Update::filter_inline_query().endpoint(inline_handler);
+    let root = dptree::entry();
+    let root = root.branch(msg_handler).branch(inline_handler);
+
+    Dispatcher::builder(bot, root)
         .dependencies(dptree::deps![bot_config, http_regex_rule, cleaner, rt])
         .default_handler(|_| async move {})
         .error_handler(LoggingErrorHandler::with_custom_text("Fail to handle"))
+        .enable_ctrlc_handler()
         .build()
-        .setup_ctrlc_handler()
         .dispatch()
         .await;
 

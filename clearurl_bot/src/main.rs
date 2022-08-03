@@ -1,4 +1,5 @@
 mod bot;
+mod utils;
 
 use anyhow::Result;
 
