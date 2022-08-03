@@ -1,6 +1,15 @@
 use crate::rules;
 use url::{form_urlencoded, Url};
 
+/// Clear the query of the given URL by pre-define rules.
+///
+/// # Error
+///
+/// Return error if:
+///     * url is invalid
+///     * no rule found for the given URL and default rule is also not found
+///     * no query behind the url
+///     * rule for the given url is empty
 pub async fn clear(url: &str, store: &rules::RuntimeRules) -> anyhow::Result<reqwest::Url> {
     let mut url = Url::parse(url)?;
 

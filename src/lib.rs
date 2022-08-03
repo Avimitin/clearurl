@@ -21,10 +21,22 @@
 // SOFTWARE.
 
 /*!
-clearurl is a reimplementation of the [ClearURLs](https://github.com/ClearURLs/Addon)
+clearurl is a re-implementation of the [ClearURLs](https://github.com/ClearURLs/Addon)
 for the the [Rust](http://rust-lang.org/) programming language. It provides simple API
 to remove tracking queries to protect your privacy.
+
+## Usage
+
+use clearurl::UrlCleaner;
+
+#[tokio::main]
+async fn main() {
+    let cleaner = UrlCleaner::from_file("/path/to/rules.toml").unwrap();
+    let result = cleaner.clear("https://b23.tv/C0lw13z").unwrap();
+    assert_eq!(result, "https://www.bilibili.com/video/BV1GJ411x7h7?p=1")
+}
 */
+
 mod filter;
 mod rules;
 
