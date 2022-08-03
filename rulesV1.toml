@@ -1,6 +1,5 @@
 ["default"]
 redirect = false
-sub = []
 ban = [
   "(?:%3F)?utm(?:_[a-z_]*)?",
   "(?:%3F)?ga_[a-z_]+",
@@ -59,7 +58,6 @@ ban = [
 
 ["b23.tv"]
 redirect = true
-ban = "bilibili.com"
 
 ["twitter.com"]
 ban = ["(?:ref_?)?src", "s", "cn", "ref_url", "t"]
@@ -124,7 +122,7 @@ ban = ["cvid", "form", "sk", "sp", "sc", "qs", "qp"]
 ban = ["tt_medium", "tt_content"]
 
 ["smzdm.com"]
-sub = "post.m"
+sub = ["post.m"]
 ban = ["zdm_ss", "from"]
 
 ["taobao.com"]

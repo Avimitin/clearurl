@@ -34,17 +34,13 @@ pub mod data;
 pub mod filter;
 mod rules;
 
-use anyhow::Result;
-use data::RulesStorage;
 use url::Url;
-use tracing::error;
 
 /// UrlCleaner is a convenient struct which wrap the ruleset data and
 /// corresbonding function together.
-#[derive(Clone)]
 pub struct UrlCleaner {
     /// ruleset contains rules for domain
-    ruleset: RulesStorage,
+    rt: rules::RuntimeRules,
 }
 
 impl UrlCleaner {
@@ -53,26 +49,22 @@ impl UrlCleaner {
     /// # Error
     ///
     /// Return error when IO fail or meeting unexpected format.
-    pub fn from_file(path: &str) -> Result<UrlCleaner> {
+    pub fn from_file(path: &str) -> anyhow::Result<UrlCleaner> {
         Ok(UrlCleaner {
-            ruleset: RulesStorage::load_from_file(path)?,
+            rt: rules::parse(std::path::Path::new(path)),
         })
     }
 
     /// The clear function accepct a url string and try to parse it into a new
     /// Url struct without tracking queries.
     pub async fn clear(&self, url: &str) -> Option<Url> {
-        match filter::clear(&self.ruleset, url).await {
+        match filter::clear(url, &self.rt).await {
             Ok(url) => Some(url),
             Err(e) => {
-                error!("Error occur when filtering url {}: {}", url, e);
+                tracing::trace!("Error occur when filtering url {}: {}", url, e);
                 None
             }
         }
-    }
-
-    pub fn amount(&self) -> usize {
-        self.ruleset.amount()
     }
 }
 
