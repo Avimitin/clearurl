@@ -4,6 +4,24 @@ This is a Rust implementation of the ClearURL.
 
 ## Usage
 
+- Telegram Bot
+
+```bash
+wget https://raw.githubusercontent.com/Avimitin/clearurl/master/rules.toml
+
+docker run \
+         # Bot token
+         -e "TELOXIDE_TOKEN=BOT_TOKEN" \
+         # Whitelist
+         -e "CLBOT_ENABLE_GROUPS=123456,654321" \
+         # Rule file
+         -e "CLEARURL_FILE=/usr/lib/bot/rules.toml" \
+         -v "$(PWD):/usr/lib/bot" \
+         -d ghcr.io/Avimitin/clearurl-bot:latest
+```
+
+- Library
+
 ```toml
 # Cargo.toml
 
