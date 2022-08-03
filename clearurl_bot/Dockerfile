@@ -1,7 +1,7 @@
 FROM rust:latest as builder
 WORKDIR /app
 COPY . .
-RUN cargo build --release --workspace
+RUN cargo build --release
 
 FROM debian:bullseye-slim
 RUN apt-get update && apt-get install -y \
