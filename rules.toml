@@ -1,6 +1,6 @@
 ["default"]
-import = ""
-rules = [
+redirect = false
+ban = [
   "(?:%3F)?utm(?:_[a-z_]*)?",
   "(?:%3F)?ga_[a-z_]+",
   "(?:%3F)?yclid",
@@ -30,36 +30,16 @@ rules = [
   "(?:%3F)?tracking_source",
   "(?:%3F)?ceneo_spo",
 ]
-should_redirect = false
-match_sub = false
 
-["twitter.com"]
-import = ""
-rules = ["(?:ref_?)?src", "s", "cn", "ref_url", "t"]
-should_redirect = false
-match_sub = true
-
-
-["m.bilibili.com"]
-import = "www.bilibili.com"
-match_sub = false
-should_redirect = false
-rules = ["bbid", "ts"]
-
-["live.bilibili.com"]
-import = ""
-match_sub = false
-should_redirect = false
-rules = ["*"]
-
-["www.bilibili.com"]
-import = ""
-rules = [
+["bilibili.com"]
+sub = ["www", "live", "m"]
+ban = [
   "-Arouter",
-  "mid",
+  "bbid",
   "callback",
   "from",
   "from_source",
+  "mid",
   "msource",
   "refer_from",
   "seid",
@@ -67,31 +47,23 @@ rules = [
   "share_plat",
   "share_session_id",
   "share_source",
-  "share_times",
   "share_tag",
+  "share_times",
   "spm_id_from",
   "timestamp",
+  "ts",
   "unique_k",
   "vd_source",
 ]
-should_redirect = false
-match_sub = false
-
-["api.bilibili.com"]
-import = ""
-rules = []
-should_redirect = false
-match_sub = false
 
 ["b23.tv"]
-import = "bilibili.com"
-rules = []
-should_redirect = true
-match_sub = false
+redirect = true
+
+["twitter.com"]
+ban = ["(?:ref_?)?src", "s", "cn", "ref_url", "t"]
 
 ["www.amazon.com"]
-import = ""
-rules = [
+ban = [
   "p[fd]_rd_[a-z]*",
   "qid",
   "srs?",
@@ -124,20 +96,13 @@ rules = [
   "creative",
   "s",
 ]
-match_sub = true
-should_redirect = false
 
 ["youtube.com"]
-import = ""
-rules = ["feature", "gclid", "kw"]
-match_sub = false
-should_redirect = false
+ban = ["feature", "gclid", "kw"]
+
 
 ["reddit.com"]
-import = ""
-match_sub = false
-should_redirect = false
-rules = [
+ban = [
   "%24deep_link",
   "\\$deep_link",
   "correlation_id",
@@ -151,34 +116,18 @@ rules = [
 ]
 
 ["bing.com"]
-import = ""
-match_sub = true
-should_redirect = false
-rules = ["cvid", "form", "sk", "sp", "sc", "qs", "qp"]
+ban = ["cvid", "form", "sk", "sp", "sc", "qs", "qp"]
 
 ["twitch.com"]
-import = ""
-match_sub = true
-should_redirect = false
-rules = ["tt_medium", "tt_content"]
+ban = ["tt_medium", "tt_content"]
 
 ["smzdm.com"]
-import = ""
-match_sub = true
-should_redirect = false
-rules = ["zdm_ss", "from"]
-
-["post.m.smzdm.com"]
-import = "smzdm.com"
-match_sub = false
-should_redirect = false
-rules = []
+sub = ["post.m"]
+ban = ["zdm_ss", "from"]
 
 ["taobao.com"]
-import = ""
-match_sub = false
-should_redirect = false
-rules = [
+sub = ["item"]
+ban = [
   "price",
   "sourceType",
   "suid",
@@ -215,48 +164,14 @@ rules = [
   "_u",
 ]
 
-["item.taobao.com"]
-import = "taobao.com"
-match_sub = false
-should_redirect = false
-rules = []
-
 ["maimai.cn"]
-import = ""
-match_sub = false
-should_redirect = false
-rules = ["src", "share_channel"]
+ban = ["src", "share_channel"]
 
 ["jd.com"]
-import = ""
-match_sub = false
-should_redirect = false
+sub = ["i-item", "item.m"]
 # clean all
-rules = [".*"]
+ban = [".*"]
 
-["item.m.jd.com"]
-import = ""
-match_sub = false
-should_redirect = false
-# clean all
-rules = [".*"]
-
-["i-item.jd.com"]
-import = ""
-match_sub = false
-should_redirect = false
-# clean all
-rules = [".*"]
-
-["mp.weixin.qq.com"]
-import = ""
-match_sub = false
-should_redirect = false
-rules = ["sharer_shareid", "sharer_sharetime", "chksm", "scene", "mpshare"]
-
-# this data is for test only
-["_test"]
-import = "default"
-rules = ["_field1", "_field2"]
-should_redirect = true
-match_sub = true
+["qq.com"]
+sub = ["mp.weixin"]
+ban = ["sharer_shareid", "sharer_sharetime", "chksm", "scene", "mpshare"]
