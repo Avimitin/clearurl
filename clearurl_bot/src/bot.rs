@@ -16,9 +16,8 @@ struct Config {
 }
 
 impl Config {
-    // Return true if the given group is allow to be used
+    /// Return true if the given group is allow to be used
     pub fn is_enabled_group(&self, g: i64) -> bool {
-        // FIXME: we should use binary search here
         for group in self.enable_groups.iter() {
             if g == *group {
                 return true;
@@ -262,7 +261,6 @@ pub async fn run() -> Result<()> {
 
     let (bot, cleaner, http_regex_rule, rt) = build_runtime();
 
-    log::info!("Loaded URL rules: {}", cleaner.amount());
     log::info!(
         "Starting bot: {}",
         bot.get_me()
