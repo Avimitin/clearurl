@@ -2,14 +2,10 @@
 
 This is a Rust implementation of the ClearURL.
 
-## todo
+## Usage
 
-* A Telegram bot
-  * ~~Handle normal message~~ (**DONE**)
-  * ~~Handle commands like [/addrule, /delrule, /addgroup]~~ (Not gonna support[^1])
-  * Handle inline message
-  * Handle channel message
-* A Web frontend
+```toml
+# Cargo.toml
 
-[^1]: I want the bot to be silent and don't have too much functionality.
-It is a clearurl bot, just do the cleaning job.
+clearurl = "0.5"
+```
