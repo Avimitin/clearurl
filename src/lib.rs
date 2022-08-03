@@ -25,13 +25,7 @@ clearurl is a reimplementation of the [ClearURLs](https://github.com/ClearURLs/A
 for the the [Rust](http://rust-lang.org/) programming language. It provides simple API
 to remove tracking queries to protect your privacy.
 */
-#![cfg_attr(
-    debug_assertions,
-    allow(dead_code, unused_imports, unused_variables, unused_mut)
-)]
-
-pub mod data;
-pub mod filter;
+mod filter;
 mod rules;
 
 use url::Url;

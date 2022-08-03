@@ -1,15 +1,11 @@
-use crate::data::{DomainConfig, RulesStorage};
 use crate::rules;
-use anyhow::{anyhow, bail, Context, Result};
-use regex::Regex;
-use tracing::{span, trace, Level};
 use url::{form_urlencoded, Url};
 
 pub async fn clear(url: &str, store: &rules::RuntimeRules) -> anyhow::Result<reqwest::Url> {
     let mut url = Url::parse(url)?;
 
     let get_rule = |url: &reqwest::Url| -> anyhow::Result<&rules::Rule> {
-        let mut domain = url
+        let domain = url
             .domain()
             .ok_or_else(|| anyhow::anyhow!("no domain"))?
             .to_string();
