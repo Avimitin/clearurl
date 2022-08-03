@@ -1,6 +1,6 @@
 FROM rust:latest as builder
 WORKDIR /app
-COPY . .
+COPY ./clearurl_bot .
 RUN cargo build --release
 
 FROM debian:bullseye-slim
