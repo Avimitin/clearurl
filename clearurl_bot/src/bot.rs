@@ -74,6 +74,10 @@ async fn handle_link_message(
 
     let response = utils::clean(msg.text().unwrap(), &cleaner).await?;
 
+    if response.data.is_empty() {
+        return Ok(());
+    }
+
     let text = response
         .data
         .iter()
