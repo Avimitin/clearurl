@@ -56,9 +56,16 @@ pub async fn clean(text: &str, cleaner: &Arc<clearurl::UrlCleaner>) -> Result<Cl
     let mut data = Vec::new();
 
     for url in urls {
-        if let Some(result) = cleaner.clear(url).await {
+        if let Some(mut result) = cleaner.clear(url).await {
             if result.as_str() == url {
                 continue;
+            }
+
+            // change twitter to vxtwitter for better preview
+            if let Some("twitter.com") = result.domain() {
+                result
+                    .set_host(Some("vxtwitter.com"))
+                    .unwrap_or_else(|_| panic!("fail to set host to vxtwitter, original: {url}"));
             }
 
             data.push(result);
@@ -133,5 +140,18 @@ async fn test_clean() {
     assert_eq!(
         link.data,
         vec![url::Url::parse("https://www.bilibili.com/video/BV1vZ4y1Z7Y7?p=1").unwrap()]
+    );
+
+    let input =
+        "https://twitter.com/USAO926/status/1531171681792065536?s=20&t=lsssIcZ7sY8IAwbhAO1d2g";
+    let link = clean(input, &cleaner).await.unwrap();
+
+    // It should return expected vxtwitter
+    assert!(!link.data.is_empty());
+    assert_eq!(link.met, 1);
+    assert_eq!(link.cleaned, 1);
+    assert_eq!(
+        link.data,
+        vec![url::Url::parse("https://vxtwitter.com/USAO926/status/1531171681792065536").unwrap()]
     );
 }
