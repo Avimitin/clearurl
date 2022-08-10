@@ -22,6 +22,55 @@ pub fn replace(text: &str, cleaner: &Arc<clearurl::UrlCleaner>) -> Result<String
     Ok(result.to_string())
 }
 
+pub fn capture_url(url: &str) -> Vec<&str> {
+    let captures = REGEX_RULE.captures_iter(url);
+    let mut v = Vec::new();
+
+    for cap in captures {
+        if let Some(c) = cap.get(1) {
+            v.push(c.as_str())
+        }
+    }
+
+    v
+}
+
+/// Result that contains the cleared URL, amount of the URL we met and amount of the
+/// URL that we modified.
+#[derive(Debug)]
+pub struct CleanResult {
+    pub data: Vec<url::Url>,
+    pub met: u32,
+    pub cleaned: u32,
+}
+
+pub async fn clean(text: &str, cleaner: &Arc<clearurl::UrlCleaner>) -> Result<CleanResult> {
+    let urls = capture_url(text);
+    if urls.is_empty() {
+        anyhow::bail!("no url found in text")
+    }
+
+    // amount of the extraced url
+    let met = urls.len() as u32;
+
+    let mut data = Vec::new();
+
+    for url in urls {
+        if let Some(result) = cleaner.clear(url).await {
+            if result.as_str() == url {
+                continue;
+            }
+
+            data.push(result);
+        }
+    }
+
+    // amount of the modified url
+    let cleaned = data.len() as u32;
+
+    Ok(CleanResult { data, met, cleaned })
+}
+
 #[tokio::test(flavor = "multi_thread")]
 async fn test_replace() {
     let original = "Lorem ipsum dolor sit amet, officia excepteur ex fugiat reprehenderit enim
@@ -54,8 +103,35 @@ async fn test_replace() {
         sunt velit enim. Voluptate laboris sint cupidatat ullamco ut ea consectetur et est culpa
         et culpa duis.";
 
-    let cleaner = clearurl::UrlCleaner::from_file("../rulesV1.toml").unwrap();
+    let cleaner = Arc::new(clearurl::UrlCleaner::from_file("../rulesV1.toml").unwrap());
     let get = replace(original, &cleaner).unwrap();
 
     assert_eq!(get, expect);
+}
+
+#[tokio::test]
+async fn test_clean() {
+    let cleaner = clearurl::UrlCleaner::from_file("../rules.toml").unwrap();
+    let cleaner = Arc::new(cleaner);
+
+    // rick roll
+    let input = "https://www.bilibili.com/video/av928861104";
+    let link = clean(input, &cleaner).await.unwrap();
+
+    // it should return nothing
+    assert!(link.data.is_empty());
+    assert_eq!(link.met, 1);
+    assert_eq!(link.cleaned, 0);
+
+    let input = "https://b23.tv/YfzhsWH";
+    let link = clean(input, &cleaner).await.unwrap();
+
+    // It should return expected string
+    assert!(!link.data.is_empty());
+    assert_eq!(link.met, 1);
+    assert_eq!(link.cleaned, 1);
+    assert_eq!(
+        link.data,
+        vec![url::Url::parse("https://www.bilibili.com/video/BV1vZ4y1Z7Y7?p=1").unwrap()]
+    );
 }

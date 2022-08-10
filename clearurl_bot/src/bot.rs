@@ -1,5 +1,4 @@
-use anyhow::{bail, Context, Result};
-use chrono::prelude::*;
+use anyhow::{Context, Result};
 use clearurl::UrlCleaner;
 use std::env;
 use std::sync::{Arc, Mutex};
@@ -30,15 +29,27 @@ impl Config {
     }
 }
 
+type BotRuntime = Arc<Mutex<RuntimeInner>>;
+
 // BotRuntime store some statistic for the clearurl process.
 #[derive(Clone, Debug)]
-struct BotRuntime {
+struct RuntimeInner {
     // When did the bot start
-    start_up_time: Arc<DateTime<Utc>>,
+    start_up_time: chrono::DateTime<chrono::Utc>,
     // How many url bot has met
-    total_url_met: Arc<Mutex<u32>>,
+    total_url_met: u32,
     // How many url bot has cleared
-    total_cleared: Arc<Mutex<u32>>,
+    total_cleared: u32,
+}
+
+impl std::default::Default for RuntimeInner {
+    fn default() -> Self {
+        Self {
+            start_up_time: chrono::Utc::now(),
+            total_url_met: 0,
+            total_cleared: 0,
+        }
+    }
 }
 
 #[derive(BotCommands, Clone)]
@@ -50,122 +61,32 @@ enum Commands {
     Stats,
 }
 
-async fn parse_links(
-    input: &str,
-    regex: &regex::Regex,
-    cleaner: &UrlCleaner,
-    ctx: &mut BotRuntime,
-) -> Result<String> {
-    let caps = regex.captures_iter(input);
-    let mut buffer = String::from("Clean URL: \n");
-    let mut indeed_cleared = false;
-    let mut counter = 0;
-    for cap in caps {
-        // Get the first capture
-        let orig_url = &cap[1];
-        counter += 1;
-
-        let url = cleaner.clear(orig_url).await;
-        if url.is_none() {
-            continue;
-        }
-        let url = url.unwrap();
-
-        // If the final result is as same as the input
-        if url.as_str() == orig_url {
-            continue;
-        } else {
-            // we actually clear this url
-            indeed_cleared = true;
-        }
-
-        buffer.push_str(url.as_str());
-        buffer.push('\n');
-
-        // we have cleared a url, so we add a counter here
-        let mut cleared = ctx.total_cleared.lock().unwrap();
-        *cleared += 1;
-    }
-
-    // we have met N url, add this up to it
-    let mut met = ctx.total_url_met.lock().unwrap();
-    *met += counter;
-
-    // if we didn't do anything to the url
-    if !indeed_cleared {
-        bail!("No rule matches");
-    }
-
-    Ok(buffer)
-}
-
-#[tokio::test]
-async fn test_parse_link() {
-    let regex = regex::Regex::new(
-        r"(http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+)",
-    )
-    .unwrap();
-    let cleaner = UrlCleaner::from_file("../rules.toml").unwrap();
-    let mut rt = BotRuntime {
-        start_up_time: Arc::new(Utc::now()),
-        total_url_met: Arc::new(Mutex::new(0)),
-        total_cleared: Arc::new(Mutex::new(0)),
-    };
-
-    // rick roll
-    let input = "https://www.bilibili.com/video/av928861104";
-    let link = parse_links(input, &regex, &cleaner, &mut rt).await;
-
-    // it should return empty string
-    assert!(link.is_err());
-
-    // lock the runtime
-    {
-        let cleared = rt.total_cleared.lock().unwrap();
-        let met = rt.total_url_met.lock().unwrap();
-        assert_eq!(*met, 1);
-        assert_eq!(*cleared, 0);
-    } // release the runtime
-
-    // hit red
-    let input = "https://b23.tv/YfzhsWH";
-    let link = parse_links(input, &regex, &cleaner, &mut rt).await.unwrap();
-
-    // It should return expected string
-    assert_eq!(
-        link.as_str(),
-        "Clean URL: \nhttps://www.bilibili.com/video/BV1vZ4y1Z7Y7?p=1\n"
-    );
-
-    // lock the runtime
-    {
-        let cleared = rt.total_cleared.lock().unwrap();
-        let met = rt.total_url_met.lock().unwrap();
-        assert_eq!(*met, 2);
-        assert_eq!(*cleared, 1);
-    } // release the runtime
-
-    // It should return nothing
-    let input = "https://bit.io";
-    assert!(parse_links(input, &regex, &cleaner, &mut rt).await.is_err());
-}
-
 async fn handle_link_message(
     msg: Message,
     bot: AutoSend<Bot>,
     cleaner: Arc<UrlCleaner>,
-    regex: Arc<regex::Regex>,
-    mut rt: BotRuntime,
+    rt: BotRuntime,
 ) -> Result<()> {
-    let resp_text = parse_links(msg.text().unwrap_or(""), &regex, &cleaner, &mut rt).await;
-    // Error are prompt when parse fail, or no rule matches
-    // This happen a lot when the bot is handling in a large group
-    // So we just throw those error.
-    if let Ok(resp) = resp_text {
-        bot.send_message(msg.chat.id, resp)
-            .disable_web_page_preview(true) // no need for the preview, it is annoying
-            .await?;
+    // silently exit when we met message with no text (might be sticker, video...)
+    if msg.text().is_none() {
+        return Ok(());
     }
+
+    let response = utils::clean(msg.text().unwrap(), &cleaner).await?;
+
+    let text = response
+        .data
+        .iter()
+        .fold("Cleared url:".to_string(), |sum, x| format!("{sum}\n* {x}"));
+    bot.send_message(msg.chat.id, text)
+        // enable preview because sometime user's client might fail to load preview
+        .disable_web_page_preview(false)
+        .await?;
+
+    // update counter
+    let mut rt = rt.lock().unwrap();
+    rt.total_url_met += response.met;
+    rt.total_cleared += response.cleaned;
     Ok(())
 }
 
@@ -177,20 +98,25 @@ async fn handle_commands(
 ) -> Result<()> {
     let text = match cmd {
         Commands::Stats => {
-            let met = ctx.total_url_met.lock().unwrap();
-            let cleared = ctx.total_cleared.lock().unwrap();
-            let ratio: f32 = if *met == 0 {
+            let rt = ctx.lock().unwrap();
+            let met = rt.total_url_met;
+            let cleared = rt.total_cleared;
+            let start_up = rt.start_up_time;
+            drop(rt); // early drop to avoid long wait
+
+            let ratio: f32 = if met == 0 {
                 0.0
             } else {
-                (*cleared as f32 / *met as f32) * 100.0
+                (cleared as f32 / met as f32) * 100.0
             };
-            let start_up = ctx.start_up_time;
-            let now = Utc::now();
-            let duration = now.signed_duration_since(*start_up);
+
+            let now = chrono::Utc::now();
+            let duration = now.signed_duration_since(start_up);
+
             format!(
                 "Bot Uptime: {}h {}m {}s\nTotal URL Met: {}\nTotal URL Cleared: {}\nPercentage: {} %",
                 duration.num_hours(), duration.num_minutes() % 60, duration.num_seconds() % 60,
-                *met, *cleared, ratio
+                met, cleared, ratio
             )
         }
         Commands::Help => Commands::descriptions().to_string(),
@@ -199,32 +125,6 @@ async fn handle_commands(
     bot.send_message(msg.chat.id, text).await?;
 
     Ok(())
-}
-
-fn build_runtime() -> (
-    AutoSend<Bot>,
-    Arc<UrlCleaner>,
-    Arc<regex::Regex>,
-    BotRuntime,
-) {
-    let clearurl_file_path =
-        env::var("CLEARURL_FILE").unwrap_or_else(|_| String::from("./rules.toml"));
-    let bot = Bot::from_env().auto_send();
-    let cleaner = Arc::new(UrlCleaner::from_file(&clearurl_file_path).unwrap());
-    let http_regex_rule = Arc::new(
-        regex::Regex::new(
-            r"(http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+)",
-        )
-        .expect("Illegal http regex rule"),
-    );
-
-    let rt = BotRuntime {
-        start_up_time: Arc::new(Utc::now()),
-        total_url_met: Arc::new(Mutex::new(0)),
-        total_cleared: Arc::new(Mutex::new(0)),
-    };
-
-    (bot, cleaner, http_regex_rule, rt)
 }
 
 async fn inline_handler(
@@ -267,7 +167,13 @@ pub async fn run() -> Result<()> {
         enable_groups: Arc::new(groups),
     };
 
-    let (bot, cleaner, http_regex_rule, rt) = build_runtime();
+    let bot = Bot::from_env().auto_send();
+
+    let clearurl_file_path =
+        env::var("CLEARURL_FILE").unwrap_or_else(|_| String::from("./rules.toml"));
+    let cleaner = Arc::new(UrlCleaner::from_file(&clearurl_file_path).unwrap());
+
+    let rt = BotRuntime::new(Mutex::new(RuntimeInner::default()));
 
     log::info!(
         "Starting bot: {}",
@@ -295,7 +201,7 @@ pub async fn run() -> Result<()> {
     let root = root.branch(msg_handler).branch(inline_handler);
 
     Dispatcher::builder(bot, root)
-        .dependencies(dptree::deps![bot_config, http_regex_rule, cleaner, rt])
+        .dependencies(dptree::deps![bot_config, cleaner, rt])
         .default_handler(|_| async move {})
         .error_handler(LoggingErrorHandler::with_custom_text("Fail to handle"))
         .enable_ctrlc_handler()
