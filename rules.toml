@@ -101,6 +101,7 @@ ban = [
 ]
 
 ["youtube.com"]
+sub = ["www"]
 ban = ["feature", "gclid", "kw"]
 
 
