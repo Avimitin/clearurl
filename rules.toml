@@ -62,6 +62,9 @@ redirect = true
 ["twitter.com"]
 ban = ["(?:ref_?)?src", "s", "cn", "ref_url", "t"]
 
+["vxtwitter.com"]
+ban = ["(?:ref_?)?src", "s", "cn", "ref_url", "t"]
+
 ["www.amazon.com"]
 ban = [
   "p[fd]_rd_[a-z]*",
