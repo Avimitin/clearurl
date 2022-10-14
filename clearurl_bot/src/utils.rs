@@ -64,7 +64,7 @@ pub async fn clean(text: &str, cleaner: &Arc<clearurl::UrlCleaner>) -> Result<Cl
             // change twitter to vxtwitter for better preview
             if let Some("twitter.com") = result.domain() {
                 result
-                    .set_host(Some("vxtwitter.com"))
+                    .set_host(Some("fxtwitter.com"))
                     .unwrap_or_else(|_| panic!("fail to set host to vxtwitter, original: {url}"));
             }
 
