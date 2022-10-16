@@ -53,11 +53,14 @@ pub async fn clear(url: &str, store: &rules::RuntimeRules) -> anyhow::Result<req
     // clean the original one
     url.set_query(None);
 
+    let mut indeed_clear = 0;
+
     for (k, v) in query {
         let mut met = false;
         for re in &rule.rules {
             if re.is_match(&k) {
                 met = true;
+                indeed_clear += 1;
                 break;
             }
         }
@@ -67,12 +70,16 @@ pub async fn clear(url: &str, store: &rules::RuntimeRules) -> anyhow::Result<req
         }
     }
 
+    if indeed_clear == 0 {
+        anyhow::bail!("Nothing should be cleared");
+    }
+
     Ok(url)
 }
 
 #[tokio::test]
 async fn test_filter() {
-    let data = rules::parse(std::path::Path::new("./rulesV1.toml"));
+    let data = rules::parse(std::path::Path::new("./rules.toml"));
 
     // * test normal rule
     let url = clear(
