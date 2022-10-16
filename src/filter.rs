@@ -98,7 +98,7 @@ async fn test_filter() {
     assert_eq!(
         url.as_str(),
         // normal queries will be kept
-        "https://www.bilibili.com/video/BV1GJ411x7h7?p=1"
+        "https://www.bilibili.com/video/BV1GJ411x7h7/?p=1"
     );
 
     // * test regex
@@ -136,5 +136,12 @@ async fn test_filter() {
         // normal queries will be kept
         "https://example.com/",
     );
+
+    // * test default
+    let url = clear("https://www.youtube.com/watch?v=FqT_Ofd54fo&list=PLXSyc11qLa1YfSbP700GXf5VSvpVm2zMO&index=42", &data)
+        .await;
+    assert!(url.is_err());
+    let error = url.err().unwrap().to_string();
+    assert_eq!(error, "Nothing should be cleared")
 }
 // vim: tw=80 fo+=t
