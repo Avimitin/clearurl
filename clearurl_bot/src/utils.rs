@@ -139,7 +139,7 @@ async fn test_clean() {
     assert_eq!(link.cleaned, 1);
     assert_eq!(
         link.data,
-        vec![url::Url::parse("https://www.bilibili.com/video/BV1vZ4y1Z7Y7?p=1").unwrap()]
+        vec![url::Url::parse("https://www.bilibili.com/video/BV1vZ4y1Z7Y7/?p=1").unwrap()]
     );
 
     let input =
@@ -152,6 +152,12 @@ async fn test_clean() {
     assert_eq!(link.cleaned, 1);
     assert_eq!(
         link.data,
-        vec![url::Url::parse("https://vxtwitter.com/USAO926/status/1531171681792065536").unwrap()]
+        vec![url::Url::parse("https://fxtwitter.com/USAO926/status/1531171681792065536").unwrap()]
     );
+
+    let input = "https://www.youtube.com/watch?v=FqT_Ofd54fo&list=PLXSyc11qLa1YfSbP700GXf5VSvpVm2zMO&index=42";
+    let link = clean(input, &cleaner).await.unwrap();
+    assert!(link.data.is_empty());
+    assert_eq!(link.met, 1);
+    assert_eq!(link.cleaned, 0);
 }
