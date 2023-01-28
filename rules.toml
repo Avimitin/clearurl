@@ -41,6 +41,7 @@ ban = [
   "from_source",
   "mid",
   "msource",
+  "plat_id",
   "refer_from",
   "seid",
   "share_medium",
@@ -53,6 +54,7 @@ ban = [
   "timestamp",
   "ts",
   "unique_k",
+  "up_id",
   "vd_source",
 ]
 
