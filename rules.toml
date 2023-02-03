@@ -181,3 +181,7 @@ ban = [".*"]
 ["qq.com"]
 sub = ["mp.weixin"]
 ban = ["sharer_shareid", "sharer_sharetime", "chksm", "scene", "mpshare"]
+
+["tmall.com"]
+sub = ["detail"]
+ban = ["abbucket", "ns", "sku_properties", "spm"]
