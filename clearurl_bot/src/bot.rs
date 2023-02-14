@@ -53,7 +53,7 @@ impl std::default::Default for RuntimeInner {
 }
 
 #[derive(BotCommands, Clone)]
-#[command(rename = "lowercase", description = "Clearurl Bot Commands")]
+#[command(rename_rule = "lowercase", description = "Clearurl Bot Commands")]
 enum Commands {
     #[command(description = "Show this message")]
     Help,
@@ -63,7 +63,7 @@ enum Commands {
 
 async fn handle_link_message(
     msg: Message,
-    bot: AutoSend<Bot>,
+    bot: Bot,
     cleaner: Arc<UrlCleaner>,
     rt: BotRuntime,
 ) -> Result<()> {
@@ -94,12 +94,7 @@ async fn handle_link_message(
     Ok(())
 }
 
-async fn handle_commands(
-    msg: Message,
-    bot: AutoSend<Bot>,
-    cmd: Commands,
-    ctx: BotRuntime,
-) -> Result<()> {
+async fn handle_commands(msg: Message, bot: Bot, cmd: Commands, ctx: BotRuntime) -> Result<()> {
     let text = match cmd {
         Commands::Stats => {
             let rt = ctx.lock().unwrap();
@@ -131,11 +126,7 @@ async fn handle_commands(
     Ok(())
 }
 
-async fn inline_handler(
-    query: InlineQuery,
-    bot: AutoSend<Bot>,
-    cleaner: Arc<UrlCleaner>,
-) -> Result<()> {
+async fn inline_handler(query: InlineQuery, bot: Bot, cleaner: Arc<UrlCleaner>) -> Result<()> {
     let response = utils::replace(&query.query, &cleaner);
     if response.is_err() {
         anyhow::bail!("no link founded");
@@ -171,7 +162,7 @@ pub async fn run() -> Result<()> {
         enable_groups: Arc::new(groups),
     };
 
-    let bot = Bot::from_env().auto_send();
+    let bot = Bot::from_env();
 
     let clearurl_file_path =
         env::var("CLEARURL_FILE").unwrap_or_else(|_| String::from("./rules.toml"));
