@@ -1,31 +1,23 @@
 # clearurl
 
-This is a Rust implementation of the ClearURL.
+This is a Rust implementation of the ClearURL lib.
+
+## Features
+
+* Declarative configuration
+* Full regexp support
+* 302 redirect support
+* Batch apply configuration for sub domains
+* Post hook for rewriting URL
 
 ## Usage
-
-- Telegram Bot
-
-```bash
-wget https://raw.githubusercontent.com/Avimitin/clearurl/master/rules.toml
-
-docker run \
-         # Bot token
-         -e "TELOXIDE_TOKEN=BOT_TOKEN" \
-         # Whitelist
-         -e "CLBOT_ENABLE_GROUPS=123456,654321" \
-         # Rule file
-         -e "CLEARURL_FILE=/usr/lib/bot/rules.toml" \
-         -v "$(PWD):/usr/lib/bot" \
-         -d ghcr.io/Avimitin/clearurl-bot:latest
-```
 
 - Library
 
 ```toml
 # Cargo.toml
 
-clearurl = "0.5"
+clearurl = { version = "0.6", features = ["hooks"] }
 ```
 
 ```rust
@@ -33,23 +25,43 @@ use clearurl::URLCleaner;
 
 #[tokio::main]
 async fn main() {
+  std::fs::write("rules.toml", r#"
+["b23.tv"]
+redirect = true
+
+["bilibili.com"]
+sub = ["www", "live", "m"]
+ban = [
+  "-Arouter",
+  "bbid",
+  "buvid",
+  "callback",
+  "from.*",
+  "is_story_h5",
+  "mid",
+  "msource",
+  "plat_id",
+  "refer_from",
+  "seid",
+  "share.*",
+  "spm_id.*",
+  "timestamp",
+  "ts",
+  "unique_k",
+  "up_id",
+  "vd_source",
+]
+post_hooks = [ "bv_to_av" ]
+  "#).unwrap();
   let cleaner = URLCleaner::from_file("./rules.toml").unwrap();
 
   let url = "https://b23.tv/C0lw13z";
   cleaner.clear(url).await.unwrap();
 
+  let url = cleaner.clear("https://b23.tv/Cj2HC2K").await.unwrap();
   assert_eq!(
       url.as_str(),
-      // normal queries will be kept
-      "https://www.bilibili.com/video/BV1GJ411x7h7?p=1"
+      "https://www.bilibili.com/video/av746592874/?p=1"
   );
-
-  println!("Clean URL: {}", url);
 }
-```
-
-```bash
-wget https://raw.githubusercontent.com/Avimitin/clearurl/master/rules.toml
-
-cargo run --release
 ```
