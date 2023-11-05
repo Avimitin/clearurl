@@ -1,16 +1,11 @@
 [package]
 name = "clearurl"
-version = "0.6.0"
+version = "0.6.1"
 edition = "2021"
 description = "A rust implementation for ClearURL"
 documentation = "https://docs.rs/clearurl/"
 repository = "https://github.com/Avimitin/clearurl"
 license = "MIT"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-[workspace]
-members = ["clearurl_bot"]
-exclude = ["rules"]
 
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
