@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::fmt::Debug;
+use std::path::Path;
 use std::sync::Arc;
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -25,6 +27,12 @@ pub struct Rule {
 /// Rules is a KV map with K as full-formed URL, V as clean rules.
 pub type Rules = HashMap<String, Arc<Rule>>;
 
+pub fn parse_from_file<P: AsRef<Path> + Debug>(path: P) -> Rules {
+    let content = std::fs::read_to_string(path.as_ref())
+        .unwrap_or_else(|error| panic!("fail to read from {path:?}: {error}"));
+    parse(&content)
+}
+
 /// Parse rules configuration file from given `location`.
 ///
 /// # Error
@@ -33,12 +41,9 @@ pub type Rules = HashMap<String, Arc<Rule>>;
 ///   * fail to read the file content
 ///   * fail to parse content into expected struct
 ///   * regexp is invalid
-pub fn parse(location: &std::path::Path) -> Rules {
-    let content = std::fs::read_to_string(location)
-        .unwrap_or_else(|error| panic!("fail to read from {location:?}: {error}"));
-
+pub fn parse(content: &str) -> Rules {
     let config: HashMap<String, ConfigData> = toml::from_str(&content)
-        .unwrap_or_else(|error| panic!("fail to parse {location:?} into rules: {error}"));
+        .unwrap_or_else(|error| panic!("fail to parse data into rules: {error}"));
 
     let mut rules = HashMap::new();
     config.into_iter().for_each(|(base, data)| {
