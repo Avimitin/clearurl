@@ -55,9 +55,6 @@ post_hooks = [ "bv_to_av" ]
   "#).unwrap();
   let cleaner = URLCleaner::from_file("./rules.toml").unwrap();
 
-  let url = "https://b23.tv/C0lw13z";
-  cleaner.clear(url).await.unwrap();
-
   let url = cleaner.clear("https://b23.tv/Cj2HC2K").await.unwrap();
   assert_eq!(
       url.as_str(),
