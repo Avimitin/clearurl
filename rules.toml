@@ -53,6 +53,7 @@ ban = [
   "up_id",
   "vd_source",
 ]
+post_hooks = [ "bv_to_av" ]
 
 ["b23.tv"]
 redirect = true

@@ -37,6 +37,8 @@ async fn main() {
 }
 */
 
+#[cfg(feature = "hooks")]
+mod hooks;
 mod rules;
 
 use std::sync::Arc;
@@ -65,6 +67,8 @@ pub enum UrlCleanError {
     NoMatchRule,
     #[error("this URL is already cleared")]
     NothingToClear,
+    #[error("Fail to exectute hook {0}: {1}")]
+    HookExecutionError(String, String),
 }
 
 impl UrlCleaner {
@@ -160,6 +164,24 @@ impl UrlCleaner {
             }
         }
 
+        #[cfg(feature = "hooks")]
+        let new_url = rule
+            .post_hooks
+            .iter()
+            .try_fold(new_url.clone(), |prev_url, hook_name| {
+                let hook = hooks::POST_HOOKS.get(hook_name);
+                if hook.is_none() {
+                    return Err(UrlCleanError::HookExecutionError(
+                        hook_name.to_string(),
+                        "hook not found".to_string(),
+                    ));
+                }
+                let hook_fn = hook.unwrap();
+                hook_fn(&prev_url).map_err(|err| {
+                    UrlCleanError::HookExecutionError(hook_name.to_string(), err.to_string())
+                })
+            })?;
+
         Ok(new_url)
     }
 }
@@ -170,22 +192,24 @@ async fn test_filter() {
 
     // * test normal rule
     let url = cleaner.clear(
-        "https://www.bilibili.com/video/BV18c411f75F/?-Arouter=story&buvid=XUA26FCA524D1B63D221F4D6DE86A9EDCC84A&from_spmid=tm.recommend.0.0&is_story_h5=true&mid=7guN1WLkkGNxM7XOufwKvQ%3D%3D&p=1&plat_id=163&share_from=ugc&share_medium=android&share_plat=android&share_session_id=0237255d-d385-49df-861f-b303e20bef5b&share_source=COPY&share_tag=s_i&spmid=main.ugc-video-detail-vertical.0.0&timestamp=1699071016&unique_k=hkeZH3o&up_id=1343541951&t=1230",
+        "https://www.bilibili.com/video/BV18x411F7MS/?-Arouter=story&buvid=XUA26FCA524D1B63D221F4D6DE86A9EDCC84A&from_spmid=tm.recommend.0.0&is_story_h5=true&mid=7guN1WLkkGNxM7XOufwKvQ%3D%3D&p=1&plat_id=163&share_from=ugc&share_medium=android&share_plat=android&share_session_id=0237255d-d385-49df-861f-b303e20bef5b&share_source=COPY&share_tag=s_i&spmid=main.ugc-video-detail-vertical.0.0&timestamp=1699071016&unique_k=hkeZH3o&up_id=1343541951&t=42",
     )
     .await
     .unwrap();
     assert_eq!(
         url.as_str(),
-        "https://www.bilibili.com/video/BV18c411f75F/?p=1&t=1230"
+        "https://www.bilibili.com/video/av340607/?p=1&t=42"
     );
 
     // * test redirection
-    let url = cleaner.clear("https://b23.tv/acFF8P0").await.unwrap();
-    assert_eq!(
-        url.as_str(),
-        // normal queries will be kept
-        "https://www.bilibili.com/video/BV1nY411r7o1/?p=1"
-    );
+    #[cfg(feature = "hooks")]
+    {
+        let url = cleaner.clear("https://b23.tv/Cj2HC2K").await.unwrap();
+        assert_eq!(
+            url.as_str(),
+            "https://www.bilibili.com/video/av746592874/?p=1"
+        );
+    }
 
     // * test regex
     let url = cleaner.clear(

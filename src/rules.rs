@@ -10,6 +10,8 @@ struct ConfigData {
     redirect: bool,
     #[serde(default)]
     ban: Vec<String>,
+    #[serde(default)]
+    post_hooks: Option<Vec<String>>,
 }
 
 /// Represent rule for a single domain.
@@ -17,6 +19,7 @@ struct ConfigData {
 pub struct Rule {
     pub redirect: bool,
     pub rules: Vec<regex::Regex>,
+    pub post_hooks: Vec<String>,
 }
 
 /// Rules is a KV map with K as full-formed URL, V as clean rules.
@@ -51,6 +54,7 @@ pub fn parse(location: &std::path::Path) -> Rules {
                     })
                 })
                 .collect(),
+            post_hooks: data.post_hooks.unwrap_or_default(),
         });
         if let Some(sub) = data.sub {
             sub.into_iter().for_each(|sub_domain| {
