@@ -5,8 +5,12 @@ use lazy_static::lazy_static;
 type HookFn = fn(input: &url::Url) -> anyhow::Result<url::Url>;
 
 lazy_static! {
-    pub static ref POST_HOOKS: HashMap<String, HookFn> =
-        HashMap::from([("bv_to_av".to_string(), bv_to_av as HookFn)]);
+    pub static ref POST_HOOKS: HashMap<String, HookFn> = HashMap::from([
+            ("bv_to_av".to_string(), bv_to_av as HookFn),
+            ("fixup_twitter".to_string(), fixup_twitter as HookFn)
+        ]);
+
+    // Internal
     static ref TRANSLATE: HashMap<char, u64> = {
         TABLE
             .chars()
@@ -32,13 +36,13 @@ fn bv_to_av(input: &url::Url) -> anyhow::Result<url::Url> {
 
     let segments: Vec<_> = input.path_segments().unwrap().collect();
     if segments.len() < 2 {
-        anyhow::bail!("not a valid bilibili video URL: path segment is too short");
+        anyhow::bail!("path segment is too short: {input}");
     }
     if segments[0] != "video" {
-        anyhow::bail!("not a valid bilibili video URL: not a video URL");
+        anyhow::bail!("{input} is not a video URL");
     }
     if !segments[1].starts_with("BV") && !segments.len() == 12 {
-        anyhow::bail!("not a valid bilibili video URL: not a valid BV-encoded video URL");
+        anyhow::bail!("{input} is not a valid BV-encoded video URL");
     }
 
     let chars: Vec<char> = segments[1].chars().collect();
@@ -67,4 +71,20 @@ fn test_bv_to_av() {
         bv_to_av(&a).unwrap().to_string(),
         "https://www.bilibili.com/video/av267692137/?p=1"
     );
+}
+
+fn fixup_twitter(input: &url::Url) -> anyhow::Result<url::Url> {
+    if input.domain().is_none() {
+        anyhow::bail!("domain is empty");
+    }
+
+    let domain = input.domain().unwrap();
+    let fixup_domain = match domain {
+        "twitter.com" => "fxtwitter.com",
+        "x.com" => "fixupx.com",
+        _ => anyhow::bail!("not a valid twitter URL"),
+    };
+    let mut new_url = input.clone();
+    new_url.set_host(Some(fixup_domain)).unwrap();
+    Ok(new_url)
 }

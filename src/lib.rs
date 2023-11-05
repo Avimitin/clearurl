@@ -209,6 +209,15 @@ async fn test_filter() {
             url.as_str(),
             "https://www.bilibili.com/video/av746592874/?p=1"
         );
+
+        let url = cleaner
+            .clear("https://twitter.com/Naniii_0_o/status/1713328832932147227?t=1&s=1")
+            .await
+            .unwrap();
+        assert_eq!(
+            url.as_str(),
+            "https://fxtwitter.com/Naniii_0_o/status/1713328832932147227"
+        );
     }
 
     // * test regex

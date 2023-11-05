@@ -60,9 +60,11 @@ redirect = true
 
 ["twitter.com"]
 ban = ["(?:ref_?)?src", "s", "cn", "ref_url", "t"]
+post_hooks = [ "fixup_twitter" ]
 
-["vxtwitter.com"]
+["x.com"]
 ban = ["(?:ref_?)?src", "s", "cn", "ref_url", "t"]
+post_hooks = [ "fixup_twitter" ]
 
 ["www.amazon.com"]
 ban = [
