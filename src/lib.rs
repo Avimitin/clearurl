@@ -1,41 +1,17 @@
-// The MIT License (MIT)
-//
-// Copyright (c) 2019-2022 Avimitin
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in all
-// copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-// SOFTWARE.
-
-/*!
-clearurl is a re-implementation of the [ClearURLs](https://github.com/ClearURLs/Addon)
-for the the [Rust](http://rust-lang.org/) programming language. It provides simple API
-to remove tracking queries to protect your privacy.
-
-## Usage
-
-use clearurl::UrlCleaner;
-
-#[tokio::main]
-async fn main() {
-    let cleaner = UrlCleaner::from_file("/path/to/rules.toml").unwrap();
-    let result = cleaner.clear("https://b23.tv/C0lw13z").unwrap();
-    assert_eq!(result, "https://www.bilibili.com/video/BV1GJ411x7h7?p=1")
-}
-*/
+//! clearurl is a re-implementation of the [ClearURLs](https://github.com/ClearURLs/Addon)
+//! for the the [Rust](http://rust-lang.org/) programming language. It provides simple API
+//! to remove tracking queries to protect your privacy.
+//!
+//! ## Usage
+//!
+//! use clearurl::UrlCleaner;
+//!
+//! #[tokio::main]
+//! async fn main() {
+//!     let cleaner = UrlCleaner::from_file("/path/to/rules.toml").unwrap();
+//!     let result = cleaner.clear("https://b23.tv/C0lw13z").unwrap();
+//!     assert_eq!(result, "https://www.bilibili.com/video/BV1GJ411x7h7?p=1")
+//! }
 
 #[cfg(feature = "hooks")]
 mod hooks;
@@ -140,38 +116,34 @@ impl UrlCleaner {
             rule = get_rule(domain);
         }
 
-        if url.query().is_none() {
-            return Err(UrlCleanError::NoQuery);
-        }
-
-        if url.query().unwrap().is_empty() {
-            return Err(UrlCleanError::NoQuery);
-        }
-
-        if rule.rules.is_empty() {
-            return Err(UrlCleanError::NoMatchRule);
-        }
-
         let mut new_url = url.clone();
-        new_url.set_query(None);
-        url.query_pairs()
-            .filter(|(k, _)| {
-                let mut is_clean = true;
-                for re in &rule.rules {
-                    if re.is_match(k) {
-                        is_clean = false;
-                        break;
+        if let Some(query) = url.query() {
+            if !query.is_empty() {
+                if rule.rules.is_empty() {
+                    return Err(UrlCleanError::NoMatchRule);
+                }
+
+                new_url.set_query(None);
+                url.query_pairs()
+                    .filter(|(k, _)| {
+                        let mut is_clean = true;
+                        for re in &rule.rules {
+                            if re.is_match(k) {
+                                is_clean = false;
+                                break;
+                            }
+                        }
+                        is_clean
+                    })
+                    .for_each(|(k, v)| {
+                        new_url.query_pairs_mut().append_pair(&k, &v);
+                    });
+
+                if let Some(query) = new_url.query() {
+                    if query == url.query().unwrap() {
+                        return Err(UrlCleanError::NothingToClear);
                     }
                 }
-                is_clean
-            })
-            .for_each(|(k, v)| {
-                new_url.query_pairs_mut().append_pair(&k, &v);
-            });
-
-        if let Some(query) = new_url.query() {
-            if query == url.query().unwrap() {
-                return Err(UrlCleanError::NothingToClear);
             }
         }
 
@@ -228,6 +200,15 @@ async fn test_filter() {
         assert_eq!(
             url.as_str(),
             "https://fxtwitter.com/Naniii_0_o/status/1713328832932147227"
+        );
+
+        let url = cleaner
+            .clear("https://x.com/MyHongKongDoll/status/1720308905513787846")
+            .await
+            .unwrap();
+        assert_eq!(
+            url.as_str(),
+            "https://fixupx.com/MyHongKongDoll/status/1720308905513787846"
         );
     }
 
