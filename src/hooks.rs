@@ -41,7 +41,7 @@ fn bv_to_av(input: &url::Url) -> anyhow::Result<url::Url> {
     if segments[0] != "video" {
         anyhow::bail!("{input} is not a video URL");
     }
-    if !segments[1].starts_with("BV") && !segments.len() == 12 {
+    if !segments[1].starts_with("BV") || !segments.len() == 12 {
         anyhow::bail!("{input} is not a valid BV-encoded video URL");
     }
 
@@ -71,6 +71,8 @@ fn test_bv_to_av() {
         bv_to_av(&a).unwrap().to_string(),
         "https://www.bilibili.com/video/av267692137/?p=1"
     );
+    let b = url::Url::parse("https://www.bilibili.com/video/av747880465?p=1").unwrap();
+    assert!(bv_to_av(&b).is_err());
 }
 
 fn fixup_twitter(input: &url::Url) -> anyhow::Result<url::Url> {
