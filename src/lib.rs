@@ -99,34 +99,38 @@ impl UrlCleaner {
             rule = get_rule(domain);
         }
 
+        if rule.rules.is_empty() {
+            return Err(UrlCleanError::NoMatchRule);
+        }
+
+        let Some(query) = url.query() else {
+            return Err(UrlCleanError::NoQuery);
+        };
+
+        if query.is_empty() {
+            return Err(UrlCleanError::NoQuery);
+        }
+
         let mut new_url = url.clone();
-        if let Some(query) = url.query() {
-            if !query.is_empty() {
-                if rule.rules.is_empty() {
-                    return Err(UrlCleanError::NoMatchRule);
-                }
-
-                new_url.set_query(None);
-                url.query_pairs()
-                    .filter(|(k, _)| {
-                        let mut is_clean = true;
-                        for re in &rule.rules {
-                            if re.is_match(k) {
-                                is_clean = false;
-                                break;
-                            }
-                        }
-                        is_clean
-                    })
-                    .for_each(|(k, v)| {
-                        new_url.query_pairs_mut().append_pair(&k, &v);
-                    });
-
-                if let Some(query) = new_url.query() {
-                    if query == url.query().unwrap() {
-                        return Err(UrlCleanError::NothingToClear);
+        new_url.set_query(None);
+        url.query_pairs()
+            .filter(|(k, _)| {
+                let mut is_clean = true;
+                for re in &rule.rules {
+                    if re.is_match(k) {
+                        is_clean = false;
+                        break;
                     }
                 }
+                is_clean
+            })
+            .for_each(|(k, v)| {
+                new_url.query_pairs_mut().append_pair(&k, &v);
+            });
+
+        if let Some(query) = new_url.query() {
+            if query == url.query().unwrap() {
+                return Err(UrlCleanError::NothingToClear);
             }
         }
 
@@ -158,7 +162,7 @@ async fn test_filter() {
 
     // * test normal rule
     let url = cleaner.clear(
-        "https://www.bilibili.com/video/BV18x411F7MS/?-Arouter=story&buvid=XUA26FCA524D1B63D221F4D6DE86A9EDCC84A&from_spmid=tm.recommend.0.0&is_story_h5=true&mid=7guN1WLkkGNxM7XOufwKvQ%3D%3D&p=1&plat_id=163&share_from=ugc&share_medium=android&share_plat=android&share_session_id=0237255d-d385-49df-861f-b303e20bef5b&share_source=COPY&share_tag=s_i&spmid=main.ugc-video-detail-vertical.0.0&timestamp=1699071016&unique_k=hkeZH3o&up_id=1343541951&t=42",
+        "https://www.bilibili.com/video/BV18x411F7MS/?-Arouter=story&buvid=sjdkladjakslddjashikldajsdkl&from_spmid=tm.recommend.0.0&is_story_h5=true&mid=sdajskdajsdkasjdkasjdka%3D%3D&p=1&plat_id=163&share_from=ugc&share_medium=android&share_plat=android&share_session_id=ajdkasd890-0000-1111-2222-33330djas&share_source=COPY&share_tag=s_i&spmid=main.ugc-video-detail-vertical.0.0&timestamp=1111111&unique_k=hkeZH3o&up_id=1343541951&t=42",
     )
     .await
     .unwrap();
