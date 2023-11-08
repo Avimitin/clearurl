@@ -48,24 +48,6 @@ pub enum UrlCleanError {
 }
 
 impl UrlCleaner {
-    fn new_client() -> Result<reqwest::Client, reqwest::Error> {
-        let mut http_client = reqwest::ClientBuilder::new();
-
-        if let Ok(var) = std::env::var("HTTP_PROXY") {
-            http_client = http_client.proxy(reqwest::Proxy::http(var)?);
-        };
-
-        if let Ok(var) = std::env::var("HTTPS_PROXY") {
-            http_client = http_client.proxy(reqwest::Proxy::https(var)?);
-        };
-
-        if let Ok(var) = std::env::var("ALL_PROXY") {
-            http_client = http_client.proxy(reqwest::Proxy::all(var)?);
-        };
-
-        http_client.build()
-    }
-
     /// This function read rule data from file. The file must be in toml format.
     ///
     /// # Error
@@ -74,14 +56,15 @@ impl UrlCleaner {
     pub fn from_file(path: &str) -> Result<UrlCleaner, reqwest::Error> {
         Ok(UrlCleaner {
             rules: rules::parse_from_file(path),
-            http_client: Self::new_client()?,
+            // default with HTTP/s proxy and 10 max redirect hop policy
+            http_client: reqwest::Client::new(),
         })
     }
 
     pub fn from_toml(data: &str) -> Result<UrlCleaner, reqwest::Error> {
         Ok(UrlCleaner {
             rules: rules::parse(data),
-            http_client: Self::new_client()?,
+            http_client: reqwest::Client::new(),
         })
     }
 
