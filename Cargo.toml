@@ -20,4 +20,5 @@ anyhow = { version = "1.0.75", optional = true }
 
 [features]
 default = ["hooks"]
-hooks = ["dep:lazy_static", "dep:anyhow"]
+hooks = ["dep:lazy_static", "dep:anyhow" ]
+bilibili_hooks = ["hooks"]

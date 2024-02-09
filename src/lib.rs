@@ -174,12 +174,6 @@ async fn test_filter() {
     // * test redirection
     #[cfg(feature = "hooks")]
     {
-        let url = cleaner.clear("https://b23.tv/Cj2HC2K").await.unwrap();
-        assert_eq!(
-            url.as_str(),
-            "https://www.bilibili.com/video/av746592874/?p=1"
-        );
-
         let url = cleaner
             .clear("https://twitter.com/Naniii_0_o/status/1713328832932147227?t=1&s=1")
             .await
@@ -198,6 +192,23 @@ async fn test_filter() {
             "https://fixupx.com/MyHongKongDoll/status/1720308905513787846"
         );
     }
+
+    #[cfg(feature = "bilibili_hooks")]
+    {
+
+        let url = cleaner.clear("https://b23.tv/uPcjzlS").await.unwrap();
+        assert_eq!(
+            url.as_str(),
+            "https://www.bilibili.com/video/av746592874/?p=1"
+        );
+
+        let url = cleaner.clear("https://b23.tv/Cj2HC2K").await.unwrap();
+        assert_eq!(
+            url.as_str(),
+            "https://www.bilibili.com/video/av746592874/?p=1"
+        );
+    }
+
 
     // * test regex
     let url = cleaner.clear(
