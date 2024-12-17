@@ -1,6 +1,6 @@
 [package]
 name = "clearurl"
-version = "0.7.1"
+version = "0.7.2"
 edition = "2021"
 description = "A rust implementation for ClearURL"
 documentation = "https://docs.rs/clearurl/"
