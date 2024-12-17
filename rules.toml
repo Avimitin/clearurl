@@ -66,6 +66,11 @@ post_hooks = [ "fixup_twitter" ]
 ban = ["(?:ref_?)?src", "s", "cn", "ref_url", "t"]
 post_hooks = [ "fixup_twitter" ]
 
+["zhihu.com"]
+sub = ["www", "zhuanlan"]
+ban = [".*"]
+post_hooks = [ "fixup_zhihu" ]
+
 ["www.amazon.com"]
 ban = [
   "p[fd]_rd_[a-z]*",

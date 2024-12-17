@@ -8,7 +8,8 @@ lazy_static! {
     pub static ref POST_HOOKS: HashMap<String, HookFn> = HashMap::from([
             #[cfg(feature = "bilibili_hooks")]
             ("bv_to_av".to_string(), bv_to_av as HookFn),
-            ("fixup_twitter".to_string(), fixup_twitter as HookFn)
+            ("fixup_twitter".to_string(), fixup_twitter as HookFn),
+            ("fixup_zhihu".to_string(), fixup_zhihu as HookFn)
         ]);
 
     // Internal
@@ -89,10 +90,38 @@ fn fixup_twitter(input: &url::Url) -> anyhow::Result<url::Url> {
     let domain = input.domain().unwrap();
     let fixup_domain = match domain {
         "twitter.com" => "fxtwitter.com",
+        "www.twitter.com" => "www.fxtwitter.com",
         "x.com" => "fixupx.com",
         _ => anyhow::bail!("not a valid twitter URL"),
     };
     let mut new_url = input.clone();
     new_url.set_host(Some(fixup_domain)).unwrap();
     Ok(new_url)
+}
+
+fn fixup_zhihu(input: &url::Url) -> anyhow::Result<url::Url> {
+    if input.domain().is_none() {
+        anyhow::bail!("domain is empty");
+    }
+
+    let domain = input.domain().unwrap();
+    let pattern = regex::Regex::new("zhihu\\.com").unwrap();
+    let fixup_domain = pattern.replace(domain, "fxzhihu.com");
+    let mut new_url = input.clone();
+    new_url.set_host(Some(&fixup_domain)).unwrap();
+    Ok(new_url)
+}
+
+#[test]
+fn test_fixup_zhihu() {
+    let a = url::Url::parse("https://zhihu.com/abcdefg/?k=1").unwrap();
+    assert_eq!(
+        fixup_zhihu(&a).unwrap().to_string(),
+        "https://fxzhihu.com/abcdefg/?k=1"
+    );
+    let b = url::Url::parse("https://zhuanlan.zhihu.com/abcdefg/?k=1").unwrap();
+    assert_eq!(
+        fixup_zhihu(&b).unwrap().to_string(),
+        "https://zhuanlan.fxzhihu.com/abcdefg/?k=1"
+    );
 }
