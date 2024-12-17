@@ -18,6 +18,7 @@
             rust-analyzer
             openssl
             pkg-config
+            cargo-edit
           ];
         };
       });
